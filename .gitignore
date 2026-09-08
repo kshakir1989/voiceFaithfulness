@@ -1,0 +1,14 @@
+frontend/test-results/
+frontend/playwright-report/
+frontend/.bdd/
+data/*.db
+data/**/*.db
+backend/.venv/
+backend/**/__pycache__/
+frontend/node_modules/
+frontend/dist/
+.env
+*.pyc
+.pytest_cache/
+data/uploads/*
+!.gitkeep
