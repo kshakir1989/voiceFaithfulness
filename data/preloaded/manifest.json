@@ -1,0 +1,84 @@
+{
+  "recordings": [
+    {
+      "id": "preload-01",
+      "title": "A walk in the park",
+      "source_type": "preloaded",
+      "audio_path": "data/preloaded/preload-01.wav",
+      "duration_seconds": 180,
+      "all_ages_eligible": true
+    },
+    {
+      "id": "preload-02",
+      "title": "How plants grow",
+      "source_type": "preloaded",
+      "audio_path": "data/preloaded/preload-02.wav",
+      "duration_seconds": 180,
+      "all_ages_eligible": true
+    },
+    {
+      "id": "preload-03",
+      "title": "Library story hour",
+      "source_type": "preloaded",
+      "audio_path": "data/preloaded/preload-03.wav",
+      "duration_seconds": 180,
+      "all_ages_eligible": true
+    },
+    {
+      "id": "preload-04",
+      "title": "Cooking a simple soup",
+      "source_type": "preloaded",
+      "audio_path": "data/preloaded/preload-04.wav",
+      "duration_seconds": 180,
+      "all_ages_eligible": true
+    },
+    {
+      "id": "preload-05",
+      "title": "Weather and seasons",
+      "source_type": "preloaded",
+      "audio_path": "data/preloaded/preload-05.wav",
+      "duration_seconds": 180,
+      "all_ages_eligible": true
+    },
+    {
+      "id": "preload-06",
+      "title": "Making friends at school",
+      "source_type": "preloaded",
+      "audio_path": "data/preloaded/preload-06.wav",
+      "duration_seconds": 180,
+      "all_ages_eligible": true
+    },
+    {
+      "id": "preload-07",
+      "title": "Pets and kindness",
+      "source_type": "preloaded",
+      "audio_path": "data/preloaded/preload-07.wav",
+      "duration_seconds": 180,
+      "all_ages_eligible": true
+    },
+    {
+      "id": "preload-08",
+      "title": "Recycling at home",
+      "source_type": "preloaded",
+      "audio_path": "data/preloaded/preload-08.wav",
+      "duration_seconds": 180,
+      "all_ages_eligible": true
+    },
+    {
+      "id": "preload-09",
+      "title": "Music practice tips",
+      "source_type": "preloaded",
+      "audio_path": "data/preloaded/preload-09.wav",
+      "duration_seconds": 180,
+      "all_ages_eligible": true
+    },
+    {
+      "id": "preload-10",
+      "title": "Visiting a museum",
+      "source_type": "preloaded",
+      "audio_path": "data/preloaded/preload-10.wav",
+      "duration_seconds": 180,
+      "all_ages_eligible": true
+    }
+  ]
+}
