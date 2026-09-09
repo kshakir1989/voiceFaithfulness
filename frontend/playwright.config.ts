@@ -10,19 +10,18 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: "../backend/.venv/bin/uvicorn app.main:app --port 8000",
+      command: "backend/.venv/bin/uvicorn app.main:app --app-dir backend --port 8000",
       cwd: "..",
       url: "http://127.0.0.1:8000/api/health",
-      reuseExistingServer: true,
+      reuseExistingServer: !process.env.CI,
       env: {
         FORCE_MOCK_PROVIDERS: "1",
-        PYTHONPATH: "backend",
       },
     },
     {
       command: "npm run dev -- --host 127.0.0.1 --port 5173",
       url: "http://127.0.0.1:5173",
-      reuseExistingServer: true,
+      reuseExistingServer: !process.env.CI,
     },
   ],
 });
