@@ -79,6 +79,15 @@
       "audio_path": "data/preloaded/preload-10.wav",
       "duration_seconds": 180,
       "all_ages_eligible": true
+    },
+    {
+      "id": "preload-blocked",
+      "title": "[Blocked demo] Bad data sample — will fail",
+      "source_type": "preloaded",
+      "audio_path": "data/preloaded/preload-01.wav",
+      "duration_seconds": 180,
+      "all_ages_eligible": false,
+      "demo_fail": true
     }
   ]
 }
