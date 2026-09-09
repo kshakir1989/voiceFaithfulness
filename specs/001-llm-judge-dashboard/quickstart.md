@@ -1,53 +1,62 @@
 # Quickstart: Validate faithfulness dashboard (post-implement)
 
 **Feature**: `001-llm-judge-dashboard`  
-**Date**: 2026-09-08  
+**Date**: 2026-09-09  
 **Contracts**: [api.md](./contracts/api.md), [ui-behavior.md](./contracts/ui-behavior.md)  
-**Data**: [data-model.md](./data-model.md)
+**Data**: [data-model.md](./data-model.md)  
+**App README**: [../../README.md](../../README.md) (authoritative local start)
 
 ## Prerequisites
 
-- Python 3.12+, Node 20+
-- From `apps/voiceFaithfulness`: backend deps + frontend deps installed (see app README once created)
-- Optional: `GROQ_API_KEY` for live Groq STT/summary/judge; without it, use mocked provider tests + `local-faster-whisper` where enabled
-- Branch: work on `voiceFaithfulness/v1` (not `main`)
+- Python 3.9+ (3.12+ preferred), Node 20+
+- Backend venv + `pip install -r requirements.txt`; frontend `npm install` (see app README)
+- Optional: `GROQ_API_KEY` in `backend/.env`; otherwise `FORCE_MOCK_PROVIDERS=1` (stub scores)
+- Branch: `voiceFaithfulness/v1` (not `main`)
 
-## Start (expected after implement)
+## Start
 
 ```bash
-cd apps/voiceFaithfulness/backend && uvicorn app.main:app --reload --port 8000
-cd apps/voiceFaithfulness/frontend && npm run dev
+# Terminal A — API
+cd apps/voiceFaithfulness/backend
+source .venv/bin/activate
+export FORCE_MOCK_PROVIDERS=1
+uvicorn app.main:app --reload --port 8000
+
+# Terminal B — SPA
+cd apps/voiceFaithfulness/frontend
+npm run dev
 ```
 
-Open the SPA URL printed by Vite (proxied to API).
+Open **http://127.0.0.1:5173/** (not `:8000`). Health: `GET http://127.0.0.1:8000/api/health`.
 
 ## Manual happy path
 
-1. Confirm ~10 preloaded recordings in the picker.
-2. Select transcription agent (default Groq Whisper Turbo OK) and judge agent (default Llama 3.3 70B OK).
-3. Run pipeline; watch stages transcript → summary → judge.
-4. Confirm per-recording % and overall %; confirm both agent IDs visible for the run.
-5. Switch graph views; values match the numeric list.
-6. Confirm teaching messages appear for the five concepts.
+1. Confirm stub-mode banner; ~10 all-ages preloads + labeled **[Blocked demo]** item.
+2. Preview audio; select STT + judge; run pipeline.
+3. Confirm stages, transcript + summary panels, score, overall %, teaching concepts log.
+4. Switch graph views; values match the numeric list.
+5. Optional: upload a local file (session-only); try blocked demo → clear error, no score.
 
 ## Acceptance tests
 
 ```bash
-cd apps/voiceFaithfulness
-# Backend unit/API (mocked providers)
-pytest
-# UI + API Gherkin/Playwright
+cd apps/voiceFaithfulness/backend
+source .venv/bin/activate
+FORCE_MOCK_PROVIDERS=1 pytest
+
+cd ../frontend
 npm run test:e2e
 ```
 
-Expected: P1 scenarios in `features/*.feature` pass (picker, both agent drop-downs, run, scores, aggregate mean).
+Or from app root: `npm run test:e2e` (delegates to frontend).
 
 ## Limit / failure check
 
-- Force mock 429 → UI shows rate-limit message; overall % unchanged.
-- Start second run while first running → blocked with clear message.
+- Stub 429 (or Playwright route) → rate-limit banner; overall % unchanged.
+- Run-in-progress → `run_in_progress` banner.
+- Blocked demo / all-ages → 403 message; no fabricated score.
 
 ## Do not
 
-- Implement UI before `contracts/ui-design.md` is `Review: approved` with Figma node URLs.
-- Commit onto `main`; merge via PR after deploy/ship.
+- Commit secrets (`.env` with real keys).
+- Commit onto `main`; push `voiceFaithfulness/v1` and merge via PR after ship/review.

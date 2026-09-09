@@ -39,11 +39,18 @@ Lists preloaded + accepted local recordings.
       "title": "…",
       "source_type": "preloaded",
       "duration_seconds": 180,
-      "all_ages_eligible": true
+      "all_ages_eligible": true,
+      "audio_url": "/api/recordings/{id}/audio"
     }
   ]
 }
 ```
+
+### `GET /recordings/{id}/audio`
+
+Streams (or serves) the recording audio for in-page preview.  
+**200**: audio bytes with appropriate `Content-Type` (`audio/wav`, `audio/mpeg`, etc.).  
+**404**: unknown id.
 
 ### `POST /recordings/upload`
 

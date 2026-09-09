@@ -27,10 +27,12 @@
 | Region | Contract |
 |--------|----------|
 | Brand / title | Product name visible as primary identity (Elegant UI / portfolio-quality) |
-| Ingest | Preloaded picker + local upload control |
+| Ingest | Preloaded picker + local upload control + audio preview for the selected recording |
 | Agents | Transcription drop-down + Judge drop-down (required before Run) |
 | Run | Start control; disabled while another run is active or agents missing |
 | Pipeline status | Per-stage pending/running/completed/failed |
+| Transcript | Readable scrollable text panel once transcript exists on the run (empty/hidden before) |
+| Summary | Readable text panel once summary exists on the run (empty/hidden before) |
 | Teaching | Short messages for ingest → transcript → summary → judge → aggregate |
 | Scores | List of completed scores with agent IDs visible |
 | Overall | Overall % or “No scores yet” |
@@ -43,10 +45,11 @@
 | Step | Contract |
 |------|----------|
 | Picker | Shows ~10 all-ages preloaded titles |
+| Preview | Native or styled `<audio>` (or equivalent) plays the selected recording’s file before Run |
 | Agents | Both drop-downs populated from API; defaults selectable/changeable |
 | Run | Starts only with recording + both agents |
 | Progress | Stages update live (poll or push) |
-| Done | Per-recording % and overall % update; agents shown for the run |
+| Done | Per-recording % and overall % update; agents shown for the run; transcript + summary panels filled |
 
 ### Choose agents (P1)
 
@@ -60,9 +63,17 @@
 
 | Result | Contract |
 |--------|----------|
-| Accept | Appears in selectable list |
+| Accept | Appears in selectable list; preview works for the new item |
 | Policy block | Clear message; no score |
 | Bad file | Clear message; pipeline not started |
+
+### Transcript + summary display (P1, US4)
+
+| Element | Contract |
+|---------|----------|
+| Transcript panel | Shows full transcript text after transcript stage succeeds; scrollable if long |
+| Summary panel | Shows summary text after summary stage succeeds |
+| Empty | Panels absent or clearly empty until the corresponding stage completes; no invented text |
 
 ### Teaching (P2)
 
@@ -93,4 +104,4 @@
 
 ## Test hooks (for Gherkin)
 
-Stable `data-testid` (or role+name) for: recording picker, transcription select, judge select, run button, stage list, overall metric, score list, graph selector, teaching region, error banner.
+Stable `data-testid` (or role+name) for: recording picker, audio preview, transcription select, judge select, run button, stage list, transcript panel, summary panel, overall metric, score list, graph selector, teaching region, error banner, upload control.

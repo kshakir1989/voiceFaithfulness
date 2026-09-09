@@ -107,14 +107,14 @@
 
 ### Tests
 
-- [ ] T035 [P] [US2] Add Gherkin for STT drop-down selection + recorded agent in `features/pipeline.feature`
-- [ ] T036 [P] [US2] Add pytest asserting run stores `transcription_agent_id` and mock STT receives that id in `backend/tests/test_stt_selection.py`
+- [x] T035 [P] [US2] Add Gherkin for STT drop-down selection + recorded agent in `features/pipeline.feature`
+- [x] T036 [P] [US2] Add pytest asserting run stores `transcription_agent_id` and mock STT receives that id in `backend/tests/test_stt_selection.py`
 
 ### Implementation
 
-- [ ] T037 [US2] Enforce required `transcription_agent_id` before start; map rate limits to `rate_limited` errors in `backend/app/api/runs.py` / providers
-- [ ] T038 [US2] After T019: ensure STT `<select>` uses catalog + shows selected agent on completed row in `frontend/src/`
-- [ ] T039 [US2] Pass US2 Gherkin + pytest
+- [x] T037 [US2] Enforce required `transcription_agent_id` before start; map rate limits to `rate_limited` errors in `backend/app/api/runs.py` / providers
+- [x] T038 [US2] After T019: ensure STT `<select>` uses catalog + shows selected agent on completed row in `frontend/src/`
+- [x] T039 [US2] Pass US2 Gherkin + pytest
 
 **Checkpoint**: US2 independent test green
 
@@ -128,38 +128,42 @@
 
 ### Tests
 
-- [ ] T040 [P] [US3] Add Gherkin for judge drop-down in `features/pipeline.feature`
-- [ ] T041 [P] [US3] Add pytest for `judge_agent_id` wiring in `backend/tests/test_judge_selection.py`
+- [x] T040 [P] [US3] Add Gherkin for judge drop-down in `features/pipeline.feature`
+- [x] T041 [P] [US3] Add pytest for `judge_agent_id` wiring in `backend/tests/test_judge_selection.py`
 
 ### Implementation
 
-- [ ] T042 [US3] Enforce required `judge_agent_id`; judge provider dispatch by catalog id in `backend/app/domain/runner.py`
-- [ ] T043 [US3] After T019: judge `<select>` + display on score rows in `frontend/src/`
-- [ ] T044 [US3] Pass US3 Gherkin + pytest
+- [x] T042 [US3] Enforce required `judge_agent_id`; judge provider dispatch by catalog id in `backend/app/domain/runner.py`
+- [x] T043 [US3] After T019: judge `<select>` + display on score rows in `frontend/src/`
+- [x] T044 [US3] Pass US3 Gherkin + pytest
 
 **Checkpoint**: US1–US3 form MVP pipeline with both agent pickers
 
 ---
 
-## Phase 6: User Story 4 — Add a local recording (P1)
+## Phase 6: User Story 4 — Local upload + preview + transcript/summary display (P1)
 
-**Goal**: Local upload path; all-ages block; contributes to aggregate when accepted
+**Goal**: Local upload path; all-ages block; listen before run; show transcript + summary after stages; contribute to aggregate when accepted
 
-**Independent Test**: Upload accepted audio → scoreable; blocked upload shows message and no score
+**Independent Test**: Preview selected audio → upload accepted audio → scoreable with visible transcript + summary; blocked upload shows message and no score
 
 ### Tests
 
-- [ ] T045 [P] [US4] Add Gherkin for upload accept/block in `features/pipeline.feature`
-- [ ] T046 [P] [US4] Add pytest for `POST /recordings/upload` codes in `backend/tests/test_upload.py`
+- [x] T045 [P] [US4] Add Gherkin for upload accept/block, audio preview, transcript panel, and summary panel in `features/pipeline.feature`
+- [x] T046 [P] [US4] Add pytest for `POST /recordings/upload` codes in `backend/tests/test_upload.py`
+- [x] T071 [P] [US4] Add pytest for `GET /recordings/{id}/audio` and listing `audio_url` in `backend/tests/test_recording_audio.py`
 
 ### Implementation
 
-- [ ] T047 [US4] Implement multipart upload to `data/uploads/` + recording row in `backend/app/api/recordings.py`
-- [ ] T048 [US4] Hook all-ages policy (reject → `all_ages_blocked`) in `backend/app/policy/all_ages.py`
-- [ ] T049 [US4] After T019: upload control + error banner in `frontend/src/`
-- [ ] T050 [US4] Pass US4 Gherkin + pytest
+- [x] T047 [US4] Implement multipart upload to `data/uploads/` + recording row in `backend/app/api/recordings.py`
+- [x] T048 [US4] Hook all-ages policy (reject → `all_ages_blocked`) in `backend/app/policy/all_ages.py`
+- [x] T072 [US4] Serve `GET /recordings/{id}/audio` and include `audio_url` on `GET /recordings` items in `backend/app/api/recordings.py`
+- [x] T049 [US4] After T019: upload control + error banner + `<audio>` preview bound to selected recording in `frontend/src/`
+- [x] T073 [US4] After T019: render readable transcript panel from `run.transcript` (`data-testid` vf-transcript) in `frontend/src/`
+- [x] T074 [US4] After T019: render summary panel from `run.summary` (`data-testid` vf-summary) in `frontend/src/`
+- [x] T050 [US4] Pass US4 Gherkin + pytest + Playwright for upload, preview, transcript, and summary
 
-**Checkpoint**: Local + preloaded both feed dashboard
+**Checkpoint**: Local + preloaded both feed dashboard; learner can listen before run and read transcript/summary after
 
 ---
 
@@ -171,14 +175,14 @@
 
 ### Tests
 
-- [ ] T051 [P] [US5] Add Gherkin for teaching region visibility in `features/dashboard.feature`
-- [ ] T052 [P] [US5] Add pytest for `GET /teaching/messages` in `backend/tests/test_teaching.py`
+- [x] T051 [P] [US5] Add Gherkin for teaching region visibility in `features/dashboard.feature`
+- [x] T052 [P] [US5] Add pytest for `GET /teaching/messages` in `backend/tests/test_teaching.py`
 
 ### Implementation
 
-- [ ] T053 [US5] Implement `GET /teaching/messages` in `backend/app/api/teaching.py`
-- [ ] T054 [US5] After T019: teaching region bound to stage events in `frontend/src/` per ui-behavior
-- [ ] T055 [US5] Pass US5 Gherkin
+- [x] T053 [US5] Implement `GET /teaching/messages` in `backend/app/api/teaching.py`
+- [x] T054 [US5] After T019: teaching region bound to stage events in `frontend/src/` per ui-behavior
+- [x] T055 [US5] Pass US5 Gherkin
 
 **Checkpoint**: SC-005 covered
 
@@ -192,15 +196,15 @@
 
 ### Tests
 
-- [ ] T056 [P] [US6] Add Gherkin for overall mean, empty state, graph selector in `features/dashboard.feature`
-- [ ] T057 [P] [US6] Add pytest for dashboard payload `graph_views` + mean rounding in `backend/tests/test_metrics.py`
+- [x] T056 [P] [US6] Add Gherkin for overall mean, empty state, graph selector in `features/dashboard.feature`
+- [x] T057 [P] [US6] Add pytest for dashboard payload `graph_views` + mean rounding in `backend/tests/test_metrics.py`
 
 ### Implementation
 
-- [ ] T058 [US6] Ensure metrics endpoint returns graph view catalog + scores with agent ids in `backend/app/api/metrics.py`
-- [ ] T059 [US6] After T019: add Recharts (or Chart.js) views `per_recording_bars` and `overall_aggregate` in `frontend/src/components/graphs/`
-- [ ] T060 [US6] Mobile-width layout pass matching Figma in `frontend/src/`
-- [ ] T061 [US6] Pass US6 Gherkin + pytest
+- [x] T058 [US6] Ensure metrics endpoint returns graph view catalog + scores with agent ids in `backend/app/api/metrics.py`
+- [x] T059 [US6] After T019: add Recharts (or Chart.js) views `per_recording_bars` and `overall_aggregate` in `frontend/src/components/graphs/`
+- [x] T060 [US6] Mobile-width layout pass matching Figma in `frontend/src/`
+- [x] T061 [US6] Pass US6 Gherkin + pytest
 
 **Checkpoint**: SC-002, SC-006, SC-009 covered
 
@@ -214,14 +218,14 @@
 
 ### Tests
 
-- [ ] T062 [P] [US7] Add Gherkin for rate limit and run-in-progress in `features/pipeline.feature`
-- [ ] T063 [P] [US7] Add pytest for 429 mapping and 409 `run_in_progress` in `backend/tests/test_errors.py`
+- [x] T062 [P] [US7] Add Gherkin for rate limit and run-in-progress in `features/pipeline.feature`
+- [x] T063 [P] [US7] Add pytest for 429 mapping and 409 `run_in_progress` in `backend/tests/test_errors.py`
 
 ### Implementation
 
-- [ ] T064 [US7] Map provider failures to API error codes in `backend/app/providers/` + `api/runs.py`
-- [ ] T065 [US7] After T019: error banner states in `frontend/src/` per spa-error Figma
-- [ ] T066 [US7] Pass US7 Gherkin + pytest
+- [x] T064 [US7] Map provider failures to API error codes in `backend/app/providers/` + `api/runs.py`
+- [x] T065 [US7] After T019: error banner states in `frontend/src/` per spa-error Figma
+- [x] T066 [US7] Pass US7 Gherkin + pytest
 
 **Checkpoint**: SC-004 covered
 
@@ -229,10 +233,10 @@
 
 ## Phase 10: Polish & Cross-Cutting
 
-- [ ] T067 [P] Align `spec-architecture.mmd` / `.html` with new backend/frontend/test artifacts and re-render `spec-architecture.png`
-- [ ] T068 [P] Verify quickstart paths in `specs/001-llm-judge-dashboard/quickstart.md` against real scripts
-- [ ] T069 Run full `pytest` + `npm run test:e2e` and fix regressions
-- [ ] T070 Owner review: confirm all-ages preloaded content; no secrets committed
+- [x] T067 [P] Align `spec-architecture.mmd` / `.html` with new backend/frontend/test artifacts and re-render `spec-architecture.png`
+- [x] T068 [P] Verify quickstart paths in `specs/001-llm-judge-dashboard/quickstart.md` against real scripts
+- [x] T069 Run full `pytest` + `npm run test:e2e` and fix regressions
+- [x] T070 Owner review: confirm all-ages preloaded content; no secrets committed — automated: `.env` gitignored, no secret-looking keys in tree; preloads are silent placeholders + one labeled blocked demo (replace silent WAVs with real ~3-min all-ages clips before public demos)
 
 ---
 
@@ -243,7 +247,7 @@ Phase 1 Setup → Phase 2 Foundational → Phase 2b Figma (T018–T019)
      ↓
 US1 (needs agents APIs) → US2 → US3  } P1 MVP pipeline
      ↓
-US4 local upload
+US4 local upload + preview + transcript/summary display
      ↓
 US5 teaching → US6 graphs/dashboard polish → US7 errors
      ↓
@@ -277,9 +281,9 @@ Polish
 | US1 | T021–T034 (14) |
 | US2 | T035–T039 (5) |
 | US3 | T040–T044 (5) |
-| US4 | T045–T050 (6) |
+| US4 | T045–T050, T071–T074 (10) |
 | US5 | T051–T055 (5) |
 | US6 | T056–T061 (6) |
 | US7 | T062–T066 (5) |
 | Polish | T067–T070 (4) |
-| **Total** | **70** |
+| **Total** | **74** |

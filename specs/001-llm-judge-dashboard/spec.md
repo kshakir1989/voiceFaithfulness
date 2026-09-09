@@ -60,17 +60,20 @@ Before judging runs, a learner opens a drop-down of available free-tier judge ag
 
 ### User Story 4 - Add a local recording (Priority: P1)
 
-A learner adds an audio file from their device, runs the same pipeline, and sees that recording contribute to the overall score—or receives a clear block if the material is not all-ages acceptable.
+A learner adds an audio file from their device (or picks a preloaded one), can listen to the selected recording before running the pipeline, runs the same pipeline, then sees the transcript and its summary alongside the faithfulness score—or receives a clear block if the material is not all-ages acceptable.
 
-**Why this priority**: Local add is a required ingest path alongside the picker.
+**Why this priority**: Local add is a required ingest path alongside the picker; preview and post-run text make the LLM-as-judge lesson concrete (what was heard → what was written → what was judged).
 
-**Independent Test**: Upload a valid all-ages sample audio, complete scoring, confirm it appears on the dashboard. Upload or flag a disallowed sample and confirm scoring is blocked with a clear message.
+**Independent Test**: Preview-play a selected recording; upload a valid all-ages sample, complete scoring, confirm transcript and summary are visible and the score appears on the dashboard. Upload or flag a disallowed sample and confirm scoring is blocked with a clear message.
 
 **Acceptance Scenarios**:
 
 1. **Given** I am on the app, **When** I choose to add a local audio file that is accepted, **Then** the recording appears as selectable/runnable in the same flow as preloaded items.
 2. **Given** a local recording is accepted, **When** the pipeline completes, **Then** its score contributes to the overall percentage.
 3. **Given** a local recording fails the all-ages policy, **When** I try to score it, **Then** scoring is blocked and I see a clear message explaining why.
+4. **Given** I have selected a recording (preloaded or local), **When** I use the preview control, **Then** I can listen to that audio before starting the pipeline.
+5. **Given** a pipeline run has produced a transcript, **When** I view the completed (or in-progress after transcript) run, **Then** I see a readable visual representation of the transcript text.
+6. **Given** a pipeline run has produced a summary, **When** I view the completed run, **Then** I see the summary text displayed so I can compare it to the transcript and the faithfulness score.
 
 ---
 
@@ -157,6 +160,9 @@ When a free-tier limit or stage failure occurs, the learner sees an explicit mes
 - **FR-017**: v1 summarization MUST use a free-tier summarizer configured by the product (not a third learner-facing drop-down), unless a later amendment adds one.
 - **FR-018**: System MUST let the learner select among a small set of dashboard graph views (at least two: per-recording faithfulness scores, and overall/aggregate) without hiding the numeric list/overall percentage.
 - **FR-019**: Selected graph views MUST display values consistent with completed faithfulness scores and the overall aggregate; empty state MUST NOT invent data.
+- **FR-020**: System MUST let the learner listen to the currently selected recording (preloaded or accepted local) via an in-page audio preview before starting the pipeline.
+- **FR-021**: After the transcript stage succeeds, the system MUST display a readable visual representation of the transcript text (scrollable text panel; waveform optional, not required in v1).
+- **FR-022**: After the summary stage succeeds, the system MUST display the summary text so the learner can see what the judge compared to the transcript.
 
 ### Key Entities
 
@@ -184,6 +190,7 @@ When a free-tier limit or stage failure occurs, the learner sees an explicit mes
 - **SC-007**: Automated acceptance coverage includes both UI flows and backend/pipeline behaviors described in P1 user stories before the feature is considered done.
 - **SC-008**: For a completed run, the learner can identify which transcription agent and which judge agent were used for that run.
 - **SC-009**: With at least two completed scores, the learner can switch graph views and each view remains numerically consistent with the listed scores and overall percentage.
+- **SC-010**: Before starting a run, the learner can play the selected recording in-page; after a successful run, both the transcript text and the summary text are visible on the same page.
 
 ## Assumptions
 
