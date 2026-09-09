@@ -2,9 +2,16 @@
 
 from fastapi import APIRouter
 
+from app.domain.mode import providers_mode
+
 router = APIRouter(tags=["health"])
 
 
 @router.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+def health() -> dict:
+    mode = providers_mode()
+    return {
+        "status": "ok",
+        "providers_mode": mode,
+        "providers_label": "stub" if mode == "stub" else "live",
+    }

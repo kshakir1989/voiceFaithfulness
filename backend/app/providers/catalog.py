@@ -54,3 +54,17 @@ def transcription_catalog() -> dict[str, Any]:
 
 def judge_catalog() -> dict[str, Any]:
     return {"agents": JUDGE_AGENTS, "default_id": DEFAULT_JUDGE_ID}
+
+
+def find_transcription_agent(agent_id: str) -> dict[str, Any] | None:
+    for agent in TRANSCRIPTION_AGENTS:
+        if agent["id"] == agent_id:
+            return agent
+    return None
+
+
+def find_judge_agent(agent_id: str) -> dict[str, Any] | None:
+    for agent in JUDGE_AGENTS:
+        if agent["id"] == agent_id:
+            return agent
+    return None

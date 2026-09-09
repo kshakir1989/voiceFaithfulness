@@ -2,11 +2,11 @@
 
 from fastapi import APIRouter
 
-from app.domain.teaching import MESSAGES
+from app.domain.teaching import teaching_catalog
 
 router = APIRouter(tags=["teaching"])
 
 
 @router.get("/teaching/messages")
 def teaching_messages() -> dict:
-    return {"messages": MESSAGES}
+    return teaching_catalog()

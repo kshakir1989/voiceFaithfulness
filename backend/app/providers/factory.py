@@ -23,12 +23,12 @@ def use_mocks() -> bool:
 
 def get_stt(agent_id: str) -> Any:
     if use_mocks() or agent_id.startswith("mock"):
-        return MockSTT()
+        return MockSTT(agent_id=agent_id)
     if agent_id == "local-faster-whisper":
         return LocalFasterWhisperSTT()
     if agent_id in {"groq-whisper-large-v3-turbo", "groq-whisper-large-v3"}:
         if not os.getenv("GROQ_API_KEY"):
-            return MockSTT()
+            return MockSTT(agent_id=agent_id)
         return GroqSTT(agent_id)
     raise ValueError(f"Unknown transcription agent: {agent_id}")
 
@@ -41,13 +41,13 @@ def get_summarizer() -> Any:
 
 def get_judge(agent_id: str) -> Any:
     if use_mocks() or agent_id.startswith("mock"):
-        return MockJudge()
+        return MockJudge(agent_id=agent_id)
     if agent_id in {
         "groq-llama-3.3-70b-versatile",
         "groq-llama-4-scout",
         "groq-gpt-oss-20b",
     }:
         if not os.getenv("GROQ_API_KEY"):
-            return MockJudge()
+            return MockJudge(agent_id=agent_id)
         return GroqJudge(agent_id)
     raise ValueError(f"Unknown judge agent: {agent_id}")

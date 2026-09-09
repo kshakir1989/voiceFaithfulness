@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 MESSAGES = [
     {
         "id": "teach-ingest",
@@ -29,3 +31,16 @@ MESSAGES = [
         "body": "The overall percentage is the average of completed recording scores.",
     },
 ]
+
+CONCEPT_ORDER = ("ingest", "transcript", "summary", "judge", "aggregate")
+
+
+def message_for(concept: str) -> dict[str, Any] | None:
+    for msg in MESSAGES:
+        if msg["concept"] == concept:
+            return dict(msg)
+    return None
+
+
+def teaching_catalog() -> dict[str, Any]:
+    return {"messages": list(MESSAGES), "concepts": list(CONCEPT_ORDER)}
