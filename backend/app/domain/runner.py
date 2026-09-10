@@ -1,4 +1,11 @@
-"""Execute ingest → transcript → summary → judge → aggregate for one run."""
+"""
+Execute ingest → transcript → summary → judge → aggregate for one run.
+
+Python note: `async def execute_run` is a coroutine — callers `await` it.
+We mutate a `run` dict in memory (the session store), update stage statuses,
+and call provider objects via `await provider.method(...)`. Exceptions that
+subclass ProviderError become failed runs with honest error codes (no fake scores).
+"""
 
 from __future__ import annotations
 
@@ -9,7 +16,7 @@ from uuid import uuid4
 
 from app.domain.pipeline import STAGE_ORDER, StageName, StageStatus, RunStatus, initial_stages
 from app.domain.store import RunStore, store
-from app.providers.catalog import SUMMARIZER_ID
+from app.providers.catalog import ATTACHED_SUMMARIZER_MODEL
 from app.providers.errors import ProviderError
 from app.providers.factory import get_judge, get_stt, get_summarizer
 
@@ -55,7 +62,9 @@ async def execute_run(
         "recording_title": recording.get("title", recording["id"]),
         "transcription_agent_id": transcription_agent_id,
         "judge_agent_id": judge_agent_id,
-        "summarizer_id": SUMMARIZER_ID,
+        # Audit: attached summarizer model; ownership of summary text is transcription_agent_id.
+        "summarizer_id": ATTACHED_SUMMARIZER_MODEL,
+        "summary_owner_agent_id": transcription_agent_id,
         "status": RunStatus.RUNNING.value,
         "error_message": None,
         "error_code": None,
@@ -84,7 +93,7 @@ async def execute_run(
         persist()
 
     stt_impl = stt or get_stt(transcription_agent_id)
-    sum_impl = summarizer or get_summarizer()
+    sum_impl = summarizer or get_summarizer(transcription_agent_id)
     judge_impl = judge or get_judge(judge_agent_id)
 
     try:
@@ -92,8 +101,8 @@ async def execute_run(
         set_stage(StageName.INGEST, StageStatus.RUNNING)
         audio = resolve_audio_path(recording["audio_path"])
         if not audio.is_file():
-            # Allow mock path when using MockSTT without real files.
-            if stt is None and hasattr(stt_impl, "calls"):
+            # Allow mock path when using MockSTT (injected or factory) without real files.
+            if hasattr(stt_impl, "calls"):
                 audio = Path(recording["audio_path"])
             else:
                 raise ProviderError("invalid_audio", f"Audio not found: {recording['audio_path']}")

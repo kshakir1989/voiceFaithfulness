@@ -13,9 +13,11 @@ MODEL = "llama-3.1-8b-instant"
 
 
 class GroqSummarizer:
-    def __init__(self, api_key: str | None = None) -> None:
+    def __init__(self, api_key: str | None = None, for_agent_id: str | None = None) -> None:
         self.api_key = api_key or os.getenv("GROQ_API_KEY", "")
-        self.summarizer_id = SUMMARIZER_ID
+        # Product model used under the hood; ownership is for_agent_id (transcription agent).
+        self.summarizer_id = for_agent_id or SUMMARIZER_ID
+        self.for_agent_id = for_agent_id
 
     async def summarize(self, transcript: str) -> str:
         if not self.api_key:

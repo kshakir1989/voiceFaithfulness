@@ -30,6 +30,22 @@ class RunStore:
         if SESSIONS_DIR.is_dir():
             shutil.rmtree(SESSIONS_DIR, ignore_errors=True)
 
+    def clear_demo_session(self, session_id: str | None = None) -> None:
+        """Clear runs/scores and uploads (optionally one session); keep preloaded files."""
+        with self._lock:
+            self.active_run_id = None
+            self.runs.clear()
+            self.scores.clear()
+            if session_id:
+                self.local_by_session.pop(session_id, None)
+                session_dir = SESSIONS_DIR / session_id
+                if session_dir.is_dir():
+                    shutil.rmtree(session_dir, ignore_errors=True)
+            else:
+                self.local_by_session.clear()
+                if SESSIONS_DIR.is_dir():
+                    shutil.rmtree(SESSIONS_DIR, ignore_errors=True)
+
     def add_local_recording(self, session_id: str, rec: dict[str, Any]) -> dict[str, Any]:
         with self._lock:
             self.local_by_session.setdefault(session_id, []).append(dict(rec))

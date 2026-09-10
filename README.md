@@ -2,14 +2,14 @@
 
 Single-page learning demo: audio → transcript (chosen free-tier STT) → summary → LLM-as-judge faithfulness score → dashboard aggregate.
 
-**Branch:** `voiceFaithfulness/v1`  
-**Spec:** `specs/001-llm-judge-dashboard/`
+**Branch:** `voiceFaithfulness/v1.1`  
+**Specs:** `specs/001-llm-judge-dashboard/` · `specs/002-live-pipeline-flow-ui/`
 
 ## Prerequisites
 
 - Python 3.9+ (3.12+ preferred)
 - Node 20+
-- Optional: `GROQ_API_KEY` in `backend/.env` (copy from `backend/.env.example`). Without a key, set `FORCE_MOCK_PROVIDERS=1` for mock STT/summary/judge.
+- Optional keys in `backend/.env` (from `.env.example`): `GROQ_API_KEY`, `DEEPGRAM_API_KEY`, `ASSEMBLYAI_API_KEY`. Without keys, set `FORCE_MOCK_PROVIDERS=1` for stub STT/summary/judge.
 
 ## Run locally
 
@@ -57,12 +57,12 @@ Vite proxies `/api` → `http://127.0.0.1:8000`. Do **not** use port 8000 as the
 
 ### First-run checklist
 
-1. Confirm ~10 preloaded recordings in the picker.
-2. Use **Preview** to listen before running.
-3. Leave or change STT + judge agents; click **Run pipeline**.
-4. Confirm stages complete, then **Transcript**, **Summary**, score, and overall %.
-
-**UI note:** Figma contract approved (MCP waiver); polish frames/node URLs when quota returns.
+1. Confirm stub/live banner; ~10 preloaded recordings (+ blocked demo).
+2. Confirm up to **5** transcription agents; stronger judges marked with ★.
+3. Preview audio; run pipeline → transcript + summary (owned by STT agent).
+4. Open **Why this score?** for rationale; use Desktop/Mobile layout toggle.
+5. Run again with another agent; compare in **Session history**.
+6. **Clear demo data** resets runs/scores/uploads; preloads remain.
 
 ## Tests
 
@@ -77,4 +77,11 @@ Gherkin in `features/*.feature` is living documentation. Executable UI coverage 
 
 ## Preloaded audio
 
-Titles + paths: `data/preloaded/manifest.json`. Short silent `.wav` placeholders are committed for pipeline tests; replace with real ~3-minute all-ages clips before demos.
+Titles + paths: `data/preloaded/manifest.json`. All-ages spoken demos (~3 minutes each) are generated with macOS TTS via:
+
+```bash
+cd apps/voiceFaithfulness
+python3 scripts/generate-preloaded-audio.py
+```
+
+The picker also includes a labeled **[Blocked demo]** item that always fails the all-ages gate. Uploads remain session-only.

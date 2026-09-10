@@ -5,11 +5,11 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import agents, dev, health, metrics, recordings, runs, teaching
+from app.api import agents, demo, dev, health, metrics, recordings, runs, teaching
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="voiceFaithfulness", version="0.1.0")
+    app = FastAPI(title="voiceFaithfulness", version="0.2.0")
     # Local Vite dev server only — tighten if you deploy.
     app.add_middleware(
         CORSMiddleware,
@@ -32,6 +32,7 @@ def create_app() -> FastAPI:
     app.include_router(runs.router, prefix="/api")
     app.include_router(metrics.router, prefix="/api")
     app.include_router(teaching.router, prefix="/api")
+    app.include_router(demo.router, prefix="/api")
     app.include_router(dev.router, prefix="/api")
     return app
 

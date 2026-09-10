@@ -1,11 +1,19 @@
 /**
- * SPA: picker + upload + preview + STT/judge + run + transcript/summary + scores.
+ * SPA: picker + upload + preview + STT/judge + run + transcript/summary +
+ * rationale + history + layout toggle + demo reset (002 live pipeline flow).
  */
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { theme } from "./theme";
 import { DashboardGraphs, type GraphViewId } from "./components/graphs/DashboardGraphs";
 
-type Agent = { id: string; label: string; available: boolean };
+type Agent = {
+  id: string;
+  label: string;
+  available: boolean;
+  highlight?: boolean;
+  owns_summary?: boolean;
+  power_tier?: number;
+};
 type Recording = {
   id: string;
   title: string;
@@ -17,17 +25,20 @@ type Recording = {
   ephemeral?: boolean;
 };
 type Stage = { name: string; status: string };
+type RunScore = { value: number; judge_agent_id: string; rationale?: string | null };
 type Run = {
   id: string;
   status: string;
   stages: Stage[];
   transcript?: string | null;
   summary?: string | null;
-  score?: { value: number; judge_agent_id: string } | null;
+  score?: RunScore | null;
   error_message?: string | null;
   error_code?: string | null;
   transcription_agent_id: string;
   judge_agent_id: string;
+  summary_owner_agent_id?: string;
+  created_at?: string;
 };
 type Dashboard = {
   overall_percentage: number | null;
@@ -46,9 +57,11 @@ type Dashboard = {
 };
 
 type TeachMsg = { id: string; concept: string; body: string };
+type ViewMode = "desktop" | "mobile";
 
 const emptyDash: Dashboard = { overall_percentage: null, completed_count: 0, scores: [] };
 const PIPELINE_TEACH = ["transcript", "summary", "judge", "aggregate"] as const;
+const VIEW_KEY = "vf_view_mode";
 
 const panelStyle: CSSProperties = {
   maxHeight: 160,
@@ -61,6 +74,19 @@ const panelStyle: CSSProperties = {
   fontSize: "0.9rem",
 };
 
+function initialViewMode(): ViewMode {
+  try {
+    const stored = sessionStorage.getItem(VIEW_KEY);
+    if (stored === "desktop" || stored === "mobile") return stored;
+  } catch {
+    /* ignore */
+  }
+  if (typeof window !== "undefined" && window.matchMedia("(max-width: 720px)").matches) {
+    return "mobile";
+  }
+  return "desktop";
+}
+
 export default function App() {
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [sttAgents, setSttAgents] = useState<Agent[]>([]);
@@ -69,6 +95,7 @@ export default function App() {
   const [sttId, setSttId] = useState("");
   const [judgeId, setJudgeId] = useState("");
   const [run, setRun] = useState<Run | null>(null);
+  const [history, setHistory] = useState<Run[]>([]);
   const [dash, setDash] = useState<Dashboard>(emptyDash);
   const [error, setError] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
@@ -80,6 +107,8 @@ export default function App() {
   const [graphView, setGraphView] = useState<GraphViewId>("per_recording_bars");
   const [providersMode, setProvidersMode] = useState<"stub" | "live">("stub");
   const [liveNotice, setLiveNotice] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>(initialViewMode);
+  const [rationaleOpen, setRationaleOpen] = useState(false);
 
   const showTeach = useCallback((concept: string, catalog?: Record<string, string>) => {
     const map = catalog ?? teachByConcept;
@@ -90,25 +119,31 @@ export default function App() {
     setTeachSeen((prev) => (prev.includes(concept) ? prev : [...prev, concept]));
   }, [teachByConcept]);
 
-  const presentPipelineTeaching = useCallback(
-    async (catalog: Record<string, string>) => {
-      for (const concept of PIPELINE_TEACH) {
-        const body = catalog[concept];
-        if (!body) continue;
-        setTeach(body);
-        setTeachConcept(concept);
-        setTeachSeen((prev) => (prev.includes(concept) ? prev : [...prev, concept]));
-        await new Promise((r) => setTimeout(r, 120));
-      }
-    },
-    [],
-  );
+  const presentPipelineTeaching = useCallback(async (catalog: Record<string, string>) => {
+    for (const concept of PIPELINE_TEACH) {
+      const body = catalog[concept];
+      if (!body) continue;
+      setTeach(body);
+      setTeachConcept(concept);
+      setTeachSeen((prev) => (prev.includes(concept) ? prev : [...prev, concept]));
+      await new Promise((r) => setTimeout(r, 120));
+    }
+  }, []);
 
   const selected = useMemo(
     () => recordings.find((r) => r.id === recordingId) ?? null,
     [recordings, recordingId],
   );
   const previewUrl = selected?.audio_url ?? "";
+
+  const setView = (mode: ViewMode) => {
+    setViewMode(mode);
+    try {
+      sessionStorage.setItem(VIEW_KEY, mode);
+    } catch {
+      /* ignore */
+    }
+  };
 
   const refreshRecordings = useCallback(async (preferId?: string) => {
     const r = await fetch("/api/recordings", { credentials: "include" });
@@ -129,16 +164,24 @@ export default function App() {
     if (!r.ok) return;
     const body = (await r.json()) as Dashboard;
     setDash(body);
-    if (body.providers_mode === "live") {
-      setProvidersMode("live");
-    } else if (body.providers_mode === "stub") {
-      setProvidersMode("stub");
-    }
+    if (body.providers_mode === "live") setProvidersMode("live");
+    else if (body.providers_mode === "stub") setProvidersMode("stub");
+  }, []);
+
+  const refreshHistory = useCallback(async () => {
+    const r = await fetch("/api/runs", { credentials: "include" });
+    if (!r.ok) return;
+    const body = await r.json();
+    setHistory((body.runs ?? []) as Run[]);
   }, []);
 
   useEffect(() => {
     const clearUploads = () => {
-      void fetch("/api/recordings/session", { method: "DELETE", credentials: "include", keepalive: true });
+      void fetch("/api/recordings/session", {
+        method: "DELETE",
+        credentials: "include",
+        keepalive: true,
+      });
     };
     window.addEventListener("pagehide", clearUploads);
     return () => window.removeEventListener("pagehide", clearUploads);
@@ -172,8 +215,9 @@ export default function App() {
       setTeachSeen(ingestBody ? ["ingest"] : []);
       await refreshRecordings();
       await refreshDash();
+      await refreshHistory();
     })();
-  }, [refreshDash, refreshRecordings]);
+  }, [refreshDash, refreshHistory, refreshRecordings]);
 
   async function onUpload(file: File | null) {
     if (!file) return;
@@ -182,7 +226,11 @@ export default function App() {
     const form = new FormData();
     form.append("file", file);
     form.append("title", file.name.replace(/\.[^.]+$/, "") || "Local recording");
-    const r = await fetch("/api/recordings/upload", { method: "POST", body: form, credentials: "include" });
+    const r = await fetch("/api/recordings/upload", {
+      method: "POST",
+      body: form,
+      credentials: "include",
+    });
     const body = await r.json();
     if (!r.ok) {
       const detail = body?.detail;
@@ -199,6 +247,7 @@ export default function App() {
     setError(null);
     setErrorCode(null);
     setBusy(true);
+    setRationaleOpen(false);
     showTeach("transcript");
     try {
       const r = await fetch("/api/runs", {
@@ -216,26 +265,24 @@ export default function App() {
         const detail = body?.detail;
         const code = typeof detail === "object" ? detail?.code : null;
         const msg =
-          (typeof detail === "object" && detail?.message) ||
-          body?.message ||
-          "Run failed";
+          (typeof detail === "object" && detail?.message) || body?.message || "Run failed";
         setError(typeof msg === "string" ? msg : JSON.stringify(msg));
         setErrorCode(typeof code === "string" ? code : null);
-        if (typeof detail === "object" && detail?.run) {
-          setRun(detail.run);
-        } else {
-          setRun(null);
-        }
+        if (typeof detail === "object" && detail?.run) setRun(detail.run);
+        else setRun(null);
         await refreshDash();
+        await refreshHistory();
       } else if (body.status === "failed") {
         setRun(body);
         setError(body.error_message || body.error_code || "Run failed");
         setErrorCode(body.error_code || "provider_error");
         await refreshDash();
+        await refreshHistory();
       } else {
         setRun(body);
         await presentPipelineTeaching(teachByConcept);
         await refreshDash();
+        await refreshHistory();
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Network error");
@@ -243,6 +290,22 @@ export default function App() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function onClearDemo() {
+    if (!window.confirm("Clear session runs, scores, and uploads? Preloaded demos stay.")) return;
+    setError(null);
+    const r = await fetch("/api/demo/session", { method: "DELETE", credentials: "include" });
+    if (!r.ok) {
+      setError("Could not clear demo data");
+      return;
+    }
+    setRun(null);
+    setHistory([]);
+    setRationaleOpen(false);
+    await refreshRecordings();
+    await refreshDash();
+    await refreshHistory();
   }
 
   const canRun = Boolean(recordingId && sttId && judgeId) && !busy;
@@ -253,11 +316,24 @@ export default function App() {
         { id: "overall_aggregate" as const, label: "Overall aggregate" },
       ];
 
+  const flowStyle: CSSProperties =
+    viewMode === "desktop"
+      ? {
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: theme.space * 1.5,
+          marginBottom: theme.space * 2,
+        }
+      : { display: "grid", gap: theme.space * 1.5, marginBottom: theme.space * 2 };
+
+  const rationale = run?.score?.rationale ?? null;
+
   return (
     <main
       data-testid="vf-shell"
+      data-view-mode={viewMode}
       style={{
-        maxWidth: 720,
+        maxWidth: viewMode === "desktop" ? 1100 : 720,
         width: "100%",
         boxSizing: "border-box",
         margin: "0 auto",
@@ -268,7 +344,37 @@ export default function App() {
         fontFamily: "Georgia, 'Times New Roman', serif",
       }}
     >
-      <h1 style={{ fontSize: "2rem", marginBottom: theme.space }}>voiceFaithfulness</h1>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: theme.space,
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: theme.space,
+        }}
+      >
+        <h1 style={{ fontSize: "2rem", margin: 0 }}>voiceFaithfulness</h1>
+        <div data-testid="vf-view-toggle" role="group" aria-label="Layout view">
+          <button
+            type="button"
+            data-testid="vf-view-desktop"
+            aria-pressed={viewMode === "desktop"}
+            onClick={() => setView("desktop")}
+            style={{ marginRight: 8 }}
+          >
+            Desktop
+          </button>
+          <button
+            type="button"
+            data-testid="vf-view-mobile"
+            aria-pressed={viewMode === "mobile"}
+            onClick={() => setView("mobile")}
+          >
+            Mobile
+          </button>
+        </div>
+      </div>
 
       <p
         data-testid="vf-providers-mode"
@@ -298,11 +404,7 @@ export default function App() {
         </p>
       ) : null}
 
-      <p
-        style={{ color: theme.color.textMuted, marginTop: 0 }}
-        data-testid="vf-teach"
-        data-concept={teachConcept}
-      >
+      <p style={{ color: theme.color.textMuted, marginTop: 0 }} data-testid="vf-teach" data-concept={teachConcept}>
         {teach}
       </p>
       <p
@@ -351,11 +453,11 @@ export default function App() {
           />
         </label>
         <p style={{ color: theme.color.textMuted, fontSize: "0.85rem", margin: 0 }}>
-          Uploads stay in this browser session only and are deleted when you leave the page. Preloaded demos are permanent.
+          Uploads stay in this browser session only. Preloaded demos are permanent.
         </p>
 
         <label>
-          Transcription agent (STT)
+          Transcription agent (owns transcript + summary)
           <select
             data-testid="vf-agent-stt"
             value={sttId}
@@ -381,29 +483,47 @@ export default function App() {
           >
             {judgeAgents.map((a) => (
               <option key={a.id} value={a.id} disabled={!a.available}>
+                {a.highlight ? "★ " : ""}
                 {a.label}
+                {a.highlight ? " (stronger)" : ""}
                 {!a.available ? " (unavailable)" : ""}
               </option>
             ))}
           </select>
         </label>
 
-        <button
-          data-testid="vf-run"
-          type="button"
-          disabled={!canRun}
-          onClick={() => void onRun()}
-          style={{
-            background: theme.color.primary,
-            color: "#fff",
-            border: "none",
-            padding: `${theme.space}px ${theme.space * 2}px`,
-            cursor: canRun ? "pointer" : "not-allowed",
-            opacity: canRun ? 1 : 0.5,
-          }}
-        >
-          {busy ? "Running…" : "Run pipeline"}
-        </button>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: theme.space }}>
+          <button
+            data-testid="vf-run"
+            type="button"
+            disabled={!canRun}
+            onClick={() => void onRun()}
+            style={{
+              background: theme.color.primary,
+              color: "#fff",
+              border: "none",
+              padding: `${theme.space}px ${theme.space * 2}px`,
+              cursor: canRun ? "pointer" : "not-allowed",
+              opacity: canRun ? 1 : 0.5,
+            }}
+          >
+            {busy ? "Running…" : "Run pipeline"}
+          </button>
+          <button
+            data-testid="vf-demo-reset"
+            type="button"
+            onClick={() => void onClearDemo()}
+            style={{
+              background: "transparent",
+              color: theme.color.text,
+              border: `1px solid ${theme.color.textMuted}`,
+              padding: `${theme.space}px ${theme.space * 2}px`,
+              cursor: "pointer",
+            }}
+          >
+            Clear demo data
+          </button>
+        </div>
       </section>
 
       {error && (
@@ -423,51 +543,116 @@ export default function App() {
         </p>
       )}
 
-      {run && (
-        <section data-testid="vf-stages" style={{ marginBottom: theme.space * 2 }}>
-          <h2 style={{ fontSize: "1.1rem" }}>Pipeline</h2>
+      <div data-testid="vf-flow" style={flowStyle}>
+        {run && (
+          <section data-testid="vf-stages">
+            <h2 style={{ fontSize: "1.1rem" }}>Pipeline</h2>
+            <ul>
+              {run.stages.map((s) => (
+                <li key={s.name}>
+                  {s.name}: {s.status}
+                </li>
+              ))}
+            </ul>
+            {run.score && (
+              <p data-testid="vf-run-score">
+                Score: {run.score.value} (judge:{" "}
+                <span data-testid="vf-run-judge">{run.judge_agent_id}</span>; STT:{" "}
+                <span data-testid="vf-run-stt">{run.transcription_agent_id}</span>)
+              </p>
+            )}
+          </section>
+        )}
+
+        {run?.transcript ? (
+          <section>
+            <h2 style={{ fontSize: "1.1rem" }}>Transcript</h2>
+            <p style={{ fontSize: "0.85rem", color: theme.color.textMuted }} data-testid="vf-transcript-owner">
+              From agent: {run.transcription_agent_id}
+            </p>
+            <pre data-testid="vf-transcript" style={panelStyle}>
+              {run.transcript}
+            </pre>
+          </section>
+        ) : null}
+
+        {run?.summary ? (
+          <section data-testid="vf-rationale">
+            <h2 style={{ fontSize: "1.1rem" }}>Summary</h2>
+            <p style={{ fontSize: "0.85rem", color: theme.color.textMuted }} data-testid="vf-summary-owner">
+              From agent: {run.summary_owner_agent_id || run.transcription_agent_id}
+            </p>
+            <pre
+              data-testid="vf-summary"
+              title={rationale || "No rationale yet"}
+              onMouseEnter={() => rationale && setRationaleOpen(true)}
+              style={panelStyle}
+            >
+              {run.summary}
+            </pre>
+            <button
+              type="button"
+              data-testid="vf-rationale-toggle"
+              onClick={() => setRationaleOpen((o) => !o)}
+              style={{ marginTop: 8 }}
+            >
+              Why this score?
+            </button>
+            {rationaleOpen ? (
+              <pre data-testid="vf-rationale-text" style={{ ...panelStyle, marginTop: 8 }}>
+                {rationale || "No rationale available for this run."}
+              </pre>
+            ) : null}
+          </section>
+        ) : null}
+
+        <section data-testid="vf-overall">
+          <h2 style={{ fontSize: "1.1rem" }}>Overall</h2>
+          <p>
+            {dash.overall_percentage == null
+              ? "No scores yet"
+              : `${dash.overall_percentage}% (${dash.completed_count} completed)`}
+          </p>
+        </section>
+      </div>
+
+      <section data-testid="vf-history" style={{ marginBottom: theme.space * 2 }}>
+        <h2 style={{ fontSize: "1.1rem" }}>Session history</h2>
+        {history.length === 0 ? (
+          <p data-testid="vf-history-empty">No runs yet</p>
+        ) : (
           <ul>
-            {run.stages.map((s) => (
-              <li key={s.name}>
-                {s.name}: {s.status}
+            {history.map((h) => (
+              <li key={h.id} data-testid="vf-history-row">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRun(h);
+                    setRationaleOpen(false);
+                  }}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    padding: 0,
+                    color: theme.color.primary,
+                    cursor: "pointer",
+                    textAlign: "left",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  {h.status} — STT {h.transcription_agent_id}; judge {h.judge_agent_id}
+                  {h.score ? ` — ${h.score.value}%` : ""}
+                </button>
+                {h.summary ? (
+                  <div style={{ fontSize: "0.85rem", color: theme.color.textMuted }}>
+                    Summary: {h.summary.slice(0, 120)}
+                    {h.summary.length > 120 ? "…" : ""}
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>
-          {run.score && (
-            <p data-testid="vf-run-score">
-              Score: {run.score.value} (judge:{" "}
-              <span data-testid="vf-run-judge">{run.judge_agent_id}</span>; STT:{" "}
-              <span data-testid="vf-run-stt">{run.transcription_agent_id}</span>)
-            </p>
-          )}
-        </section>
-      )}
-
-      {run?.transcript ? (
-        <section style={{ marginBottom: theme.space * 2 }}>
-          <h2 style={{ fontSize: "1.1rem" }}>Transcript</h2>
-          <pre data-testid="vf-transcript" style={panelStyle}>
-            {run.transcript}
-          </pre>
-        </section>
-      ) : null}
-
-      {run?.summary ? (
-        <section style={{ marginBottom: theme.space * 2 }}>
-          <h2 style={{ fontSize: "1.1rem" }}>Summary</h2>
-          <pre data-testid="vf-summary" style={panelStyle}>
-            {run.summary}
-          </pre>
-        </section>
-      ) : null}
-
-      <section data-testid="vf-overall" style={{ marginBottom: theme.space * 2 }}>
-        <h2 style={{ fontSize: "1.1rem" }}>Overall</h2>
-        <p>
-          {dash.overall_percentage == null
-            ? "No scores yet"
-            : `${dash.overall_percentage}% (${dash.completed_count} completed)`}
-        </p>
+        )}
       </section>
 
       <DashboardGraphs

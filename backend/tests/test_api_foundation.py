@@ -12,7 +12,7 @@ def test_transcription_catalog(client):
     assert r.status_code == 200
     body = r.json()
     assert body["default_id"] == DEFAULT_TRANSCRIPTION_ID
-    assert len(body["agents"]) >= 2
+    assert len(body["agents"]) >= 5
 
 
 def test_judge_catalog(client):
