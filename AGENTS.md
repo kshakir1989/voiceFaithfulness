@@ -14,4 +14,4 @@ GitHub: `kshakir1989/voiceFaithfulness`. This repository is **voiceFaithfulness 
 
 - Default branch is **`main`**. Do not push feature work to `main`.
 - Implementation branches (e.g. `v1.1`); land via PR into `main` after ship (or when agreed).
-- **UI / UX:** Figma design frames first. PRs that touch UI cite the Figma **node URL**.
+- **UI / UX:** Figma design frames first. PRs that touch UI cite the Figma **node URL**. Then **shadcn MCP → 21st MCP** (free tier only; stop when caps hit). See `.cursor/mcp.json`; set `API_KEY_21ST`.
