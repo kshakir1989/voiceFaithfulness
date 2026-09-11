@@ -20,6 +20,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { CircularProgress } from "@/components/ui/circular-progress";
+import {
+  Stepper,
+  StepperDescription,
+  StepperIndicator,
+  StepperItem,
+  StepperSeparator,
+  StepperTitle,
+  StepperTrigger,
+} from "@/components/ui/stepper";
 
 type Agent = {
   id: string;
@@ -331,6 +341,16 @@ export default function App() {
 
   const rationale = run?.score?.rationale ?? null;
 
+  const pipelineActiveStep = useMemo(() => {
+    if (!run?.stages.length) return 1;
+    const idx = run.stages.findIndex((s) => {
+      const st = s.status.toLowerCase();
+      return st !== "completed" && st !== "done" && st !== "success";
+    });
+    if (idx === -1) return run.stages.length;
+    return idx + 1;
+  }, [run?.stages]);
+
   return (
     <main
       data-testid="vf-shell"
@@ -530,13 +550,42 @@ export default function App() {
               <CardTitle>Pipeline</CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="m-0 list-disc pl-5">
-                {run.stages.map((s) => (
-                  <li key={s.name}>
-                    {s.name}: {s.status}
-                  </li>
-                ))}
-              </ul>
+              <Stepper
+                value={pipelineActiveStep}
+                orientation={viewMode === "desktop" ? "horizontal" : "vertical"}
+                className="mb-3 w-full"
+              >
+                {run.stages.map((s, i) => {
+                  const step = i + 1;
+                  const st = s.status.toLowerCase();
+                  const completed =
+                    st === "completed" || st === "done" || st === "success" || step < pipelineActiveStep;
+                  const loading =
+                    busy &&
+                    step === pipelineActiveStep &&
+                    (st === "running" || st === "in_progress" || st === "pending" || busy);
+                  return (
+                    <StepperItem
+                      key={s.name}
+                      step={step}
+                      completed={completed}
+                      loading={loading}
+                      className="relative flex-1 items-start"
+                    >
+                      <StepperTrigger className="w-full flex-col items-start gap-2 rounded-none">
+                        <StepperIndicator />
+                        <div className="space-y-0.5 px-0.5 text-left">
+                          <StepperTitle className="capitalize">{s.name}</StepperTitle>
+                          <StepperDescription>{s.status}</StepperDescription>
+                        </div>
+                      </StepperTrigger>
+                      {step < run.stages.length ? (
+                        <StepperSeparator className="absolute top-3 right-0 left-[calc(50%+0.85rem)] m-0 group-data-[orientation=horizontal]/stepper:w-[calc(100%-1.75rem)] group-data-[orientation=horizontal]/stepper:flex-none" />
+                      ) : null}
+                    </StepperItem>
+                  );
+                })}
+              </Stepper>
               {run.score ? (
                 <p data-testid="vf-run-score" className="mt-2 flex flex-wrap items-center gap-2">
                   Score: <Badge>{run.score.value}</Badge>
@@ -612,10 +661,19 @@ export default function App() {
             {dash.overall_percentage == null ? (
               <p className="m-0 text-muted-foreground">No scores yet</p>
             ) : (
-              <p className="m-0 flex flex-wrap items-baseline gap-2">
-                <span className="text-3xl font-semibold text-primary">{dash.overall_percentage}%</span>
+              <div className="flex flex-wrap items-center gap-4">
+                <CircularProgress
+                  value={dash.overall_percentage}
+                  showLabel
+                  size={112}
+                  strokeWidth={10}
+                  className="stroke-primary/20"
+                  progressClassName="stroke-primary"
+                  labelClassName="text-lg font-semibold text-primary"
+                  renderLabel={(v) => `${v}%`}
+                />
                 <Badge variant="secondary">{dash.completed_count} completed</Badge>
-              </p>
+              </div>
             )}
           </CardContent>
         </Card>
