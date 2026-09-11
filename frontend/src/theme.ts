@@ -1,4 +1,4 @@
-/** Interim design tokens from ui-design.md (teal + cool mist). */
+/** Design tokens — keep in sync with CSS vars in `src/index.css` (shadcn). */
 export const theme = {
   color: {
     primary: "#0F6B5C",

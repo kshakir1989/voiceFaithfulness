@@ -12,3 +12,4 @@ frontend/dist/
 .pytest_cache/
 data/uploads/*
 !.gitkeep
+*.tsbuildinfo

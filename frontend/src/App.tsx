@@ -2,9 +2,34 @@
  * SPA: picker + upload + preview + STT/judge + run + transcript/summary +
  * rationale + history + layout toggle + demo reset (002 live pipeline flow).
  */
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
-import { theme } from "./theme";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DashboardGraphs, type GraphViewId } from "./components/graphs/DashboardGraphs";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { CircularProgress } from "@/components/ui/circular-progress";
+import {
+  Stepper,
+  StepperDescription,
+  StepperIndicator,
+  StepperItem,
+  StepperSeparator,
+  StepperTitle,
+  StepperTrigger,
+} from "@/components/ui/stepper";
 
 type Agent = {
   id: string;
@@ -63,16 +88,11 @@ const emptyDash: Dashboard = { overall_percentage: null, completed_count: 0, sco
 const PIPELINE_TEACH = ["transcript", "summary", "judge", "aggregate"] as const;
 const VIEW_KEY = "vf_view_mode";
 
-const panelStyle: CSSProperties = {
-  maxHeight: 160,
-  overflow: "auto",
-  whiteSpace: "pre-wrap",
-  background: "rgba(0,0,0,0.04)",
-  padding: 12,
-  margin: 0,
-  fontFamily: "ui-monospace, Menlo, monospace",
-  fontSize: "0.9rem",
-};
+const selectClass =
+  "mt-1 flex h-9 w-full rounded-lg border border-input bg-card px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+
+const panelClass =
+  "max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-muted/60 p-3 font-mono text-sm";
 
 function initialViewMode(): ViewMode {
   try {
@@ -110,14 +130,17 @@ export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>(initialViewMode);
   const [rationaleOpen, setRationaleOpen] = useState(false);
 
-  const showTeach = useCallback((concept: string, catalog?: Record<string, string>) => {
-    const map = catalog ?? teachByConcept;
-    const body = map[concept];
-    if (!body) return;
-    setTeach(body);
-    setTeachConcept(concept);
-    setTeachSeen((prev) => (prev.includes(concept) ? prev : [...prev, concept]));
-  }, [teachByConcept]);
+  const showTeach = useCallback(
+    (concept: string, catalog?: Record<string, string>) => {
+      const map = catalog ?? teachByConcept;
+      const body = map[concept];
+      if (!body) return;
+      setTeach(body);
+      setTeachConcept(concept);
+      setTeachSeen((prev) => (prev.includes(concept) ? prev : [...prev, concept]));
+    },
+    [teachByConcept],
+  );
 
   const presentPipelineTeaching = useCallback(async (catalog: Record<string, string>) => {
     for (const concept of PIPELINE_TEACH) {
@@ -316,344 +339,383 @@ export default function App() {
         { id: "overall_aggregate" as const, label: "Overall aggregate" },
       ];
 
-  const flowStyle: CSSProperties =
-    viewMode === "desktop"
-      ? {
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          gap: theme.space * 1.5,
-          marginBottom: theme.space * 2,
-        }
-      : { display: "grid", gap: theme.space * 1.5, marginBottom: theme.space * 2 };
-
   const rationale = run?.score?.rationale ?? null;
+
+  const pipelineActiveStep = useMemo(() => {
+    if (!run?.stages.length) return 1;
+    const idx = run.stages.findIndex((s) => {
+      const st = s.status.toLowerCase();
+      return st !== "completed" && st !== "done" && st !== "success";
+    });
+    if (idx === -1) return run.stages.length;
+    return idx + 1;
+  }, [run?.stages]);
 
   return (
     <main
       data-testid="vf-shell"
       data-view-mode={viewMode}
-      style={{
-        maxWidth: viewMode === "desktop" ? 1100 : 720,
-        width: "100%",
-        boxSizing: "border-box",
-        margin: "0 auto",
-        padding: `max(${theme.space * 2}px, env(safe-area-inset-top)) max(${theme.space * 2}px, env(safe-area-inset-right)) max(${theme.space * 2}px, env(safe-area-inset-bottom)) max(${theme.space * 2}px, env(safe-area-inset-left))`,
-        color: theme.color.text,
-        background: theme.color.background,
-        minHeight: "100vh",
-        fontFamily: "Georgia, 'Times New Roman', serif",
-      }}
+      className={`mx-auto box-border min-h-svh w-full bg-background px-[max(1rem,env(safe-area-inset-right))] pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] text-foreground ${viewMode === "desktop" ? "max-w-[1100px]" : "max-w-[720px]"}`}
     >
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: theme.space,
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: theme.space,
-        }}
-      >
-        <h1 style={{ fontSize: "2rem", margin: 0 }}>voiceFaithfulness</h1>
-        <div data-testid="vf-view-toggle" role="group" aria-label="Layout view">
-          <button
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h1 className="m-0 font-[Georgia,'Times_New_Roman',serif] text-3xl font-normal tracking-tight">
+          voiceFaithfulness
+        </h1>
+        <div data-testid="vf-view-toggle" role="group" aria-label="Layout view" className="flex gap-2">
+          <Button
             type="button"
             data-testid="vf-view-desktop"
+            variant={viewMode === "desktop" ? "default" : "outline"}
+            size="sm"
             aria-pressed={viewMode === "desktop"}
             onClick={() => setView("desktop")}
-            style={{ marginRight: 8 }}
           >
             Desktop
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             data-testid="vf-view-mobile"
+            variant={viewMode === "mobile" ? "default" : "outline"}
+            size="sm"
             aria-pressed={viewMode === "mobile"}
             onClick={() => setView("mobile")}
           >
             Mobile
-          </button>
+          </Button>
         </div>
       </div>
 
-      <p
+      <Alert
         data-testid="vf-providers-mode"
         role="status"
-        style={{
-          marginTop: 0,
-          padding: theme.space,
-          background: providersMode === "stub" ? "rgba(155, 44, 44, 0.12)" : "rgba(15, 107, 92, 0.12)",
-          color: theme.color.text,
-          borderLeft: `4px solid ${providersMode === "stub" ? theme.color.danger : theme.color.primary}`,
-        }}
+        variant={providersMode === "stub" ? "destructive" : "default"}
+        className="mb-3"
       >
-        {providersMode === "stub"
-          ? "Stub mode: scores and transcripts are demo placeholders (mocks), not real audio analysis. Set GROQ_API_KEY and unset FORCE_MOCK_PROVIDERS for live data."
-          : "Live mode: providers are active. Scores reflect real STT → summary → judge calls."}
-      </p>
+        <AlertTitle className="flex items-center gap-2">
+          {providersMode === "stub" ? "Stub mode" : "Live mode"}
+          <Badge variant={providersMode === "stub" ? "destructive" : "default"}>
+            {providersMode}
+          </Badge>
+        </AlertTitle>
+        <AlertDescription>
+          {providersMode === "stub"
+            ? "Scores and transcripts are demo placeholders (mocks), not real audio analysis. Set GROQ_API_KEY and unset FORCE_MOCK_PROVIDERS for live data."
+            : "Providers are active. Scores reflect real STT → summary → judge calls."}
+        </AlertDescription>
+      </Alert>
 
       {liveNotice && providersMode === "live" ? (
-        <p data-testid="vf-live-notice" role="status" style={{ color: theme.color.primary }}>
-          {liveNotice}
-        </p>
+        <Alert data-testid="vf-live-notice" role="status" className="mb-3">
+          <AlertDescription>{liveNotice}</AlertDescription>
+        </Alert>
       ) : null}
 
       {dash.scores_are_stubbed ? (
-        <p data-testid="vf-stub-scores" role="status" style={{ color: theme.color.danger }}>
-          Dashboard percentages are stubbed (mock judge). They are not faithfulness of your audio.
-        </p>
+        <Alert data-testid="vf-stub-scores" role="status" variant="destructive" className="mb-3">
+          <AlertDescription>
+            Dashboard percentages are stubbed (mock judge). They are not faithfulness of your audio.
+          </AlertDescription>
+        </Alert>
       ) : null}
 
-      <p style={{ color: theme.color.textMuted, marginTop: 0 }} data-testid="vf-teach" data-concept={teachConcept}>
-        {teach}
-      </p>
-      <p
-        data-testid="vf-teach-log"
-        style={{ color: theme.color.textMuted, fontSize: "0.85rem", marginTop: 0 }}
-        aria-live="polite"
-      >
-        Concepts covered: {teachSeen.join(", ") || "none yet"}
-      </p>
+      <Card className="mb-4" size="sm">
+        <CardHeader>
+          <CardTitle className="text-muted-foreground">Teaching</CardTitle>
+          <CardDescription data-testid="vf-teach" data-concept={teachConcept}>
+            {teach}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p data-testid="vf-teach-log" className="m-0 text-xs text-muted-foreground" aria-live="polite">
+            Concepts covered: {teachSeen.join(", ") || "none yet"}
+          </p>
+        </CardContent>
+      </Card>
 
-      <section style={{ display: "grid", gap: theme.space * 1.5, marginBottom: theme.space * 2 }}>
-        <label>
-          Recording
-          <select
-            data-testid="vf-recording-picker"
-            value={recordingId}
-            onChange={(e) => setRecordingId(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 4 }}
-          >
-            {recordings.map((rec) => (
-              <option key={rec.id} value={rec.id}>
-                {rec.title}
-                {rec.ephemeral ? " · session upload" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle>Run setup</CardTitle>
+          <CardDescription>Pick a recording and agents, then run the pipeline.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3">
+          <label className="text-sm font-medium">
+            Recording
+            <select
+              data-testid="vf-recording-picker"
+              value={recordingId}
+              onChange={(e) => setRecordingId(e.target.value)}
+              className={selectClass}
+            >
+              {recordings.map((rec) => (
+                <option key={rec.id} value={rec.id}>
+                  {rec.title}
+                  {rec.ephemeral ? " · session upload" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        {previewUrl ? (
-          <div>
-            <div style={{ marginBottom: 4 }}>Preview</div>
-            <audio data-testid="vf-audio-preview" controls src={previewUrl} style={{ width: "100%" }}>
-              Your browser does not support audio.
-            </audio>
+          {previewUrl ? (
+            <div>
+              <div className="mb-1 text-sm font-medium">Preview</div>
+              <audio data-testid="vf-audio-preview" controls src={previewUrl} className="w-full">
+                Your browser does not support audio.
+              </audio>
+            </div>
+          ) : null}
+
+          <label className="text-sm font-medium">
+            Add local recording
+            <input
+              data-testid="vf-upload"
+              type="file"
+              accept="audio/*"
+              className="mt-1 block w-full text-sm"
+              onChange={(e) => void onUpload(e.target.files?.[0] ?? null)}
+            />
+          </label>
+          <p className="m-0 text-xs text-muted-foreground">
+            Uploads stay in this browser session only. Preloaded demos are permanent.
+          </p>
+
+          <label className="text-sm font-medium">
+            Transcription agent (owns transcript + summary)
+            <select
+              data-testid="vf-agent-stt"
+              value={sttId}
+              onChange={(e) => setSttId(e.target.value)}
+              className={selectClass}
+            >
+              {sttAgents.map((a) => (
+                <option key={a.id} value={a.id} disabled={!a.available}>
+                  {a.label}
+                  {!a.available ? " (unavailable)" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="text-sm font-medium">
+            Judge agent
+            <select
+              data-testid="vf-agent-judge"
+              value={judgeId}
+              onChange={(e) => setJudgeId(e.target.value)}
+              className={selectClass}
+            >
+              {judgeAgents.map((a) => (
+                <option key={a.id} value={a.id} disabled={!a.available}>
+                  {a.highlight ? "★ " : ""}
+                  {a.label}
+                  {a.highlight ? " (stronger)" : ""}
+                  {!a.available ? " (unavailable)" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="flex flex-wrap gap-2">
+            <Button data-testid="vf-run" type="button" disabled={!canRun} onClick={() => void onRun()}>
+              {busy ? "Running…" : "Run pipeline"}
+            </Button>
+            <Button
+              data-testid="vf-demo-reset"
+              type="button"
+              variant="outline"
+              onClick={() => void onClearDemo()}
+            >
+              Clear demo data
+            </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {error ? (
+        <Alert data-testid="vf-error" data-error-code={errorCode ?? undefined} variant="destructive" className="mb-4">
+          <AlertTitle>Run error</AlertTitle>
+          <AlertDescription>
+            {errorCode ? `[${errorCode}] ` : ""}
+            {error}
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      <div
+        data-testid="vf-flow"
+        className={`mb-4 grid gap-3 ${viewMode === "desktop" ? "grid-cols-[repeat(auto-fit,minmax(200px,1fr))]" : ""}`}
+      >
+        {run ? (
+          <Card data-testid="vf-stages" size="sm">
+            <CardHeader>
+              <CardTitle>Pipeline</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Stepper
+                value={pipelineActiveStep}
+                orientation={viewMode === "desktop" ? "horizontal" : "vertical"}
+                className="mb-3 w-full"
+              >
+                {run.stages.map((s, i) => {
+                  const step = i + 1;
+                  const st = s.status.toLowerCase();
+                  const completed =
+                    st === "completed" || st === "done" || st === "success" || step < pipelineActiveStep;
+                  const loading =
+                    busy &&
+                    step === pipelineActiveStep &&
+                    (st === "running" || st === "in_progress" || st === "pending" || busy);
+                  return (
+                    <StepperItem
+                      key={s.name}
+                      step={step}
+                      completed={completed}
+                      loading={loading}
+                      className="relative flex-1 items-start"
+                    >
+                      <StepperTrigger className="w-full flex-col items-start gap-2 rounded-none">
+                        <StepperIndicator />
+                        <div className="space-y-0.5 px-0.5 text-left">
+                          <StepperTitle className="capitalize">{s.name}</StepperTitle>
+                          <StepperDescription>{s.status}</StepperDescription>
+                        </div>
+                      </StepperTrigger>
+                      {step < run.stages.length ? (
+                        <StepperSeparator className="absolute top-3 right-0 left-[calc(50%+0.85rem)] m-0 group-data-[orientation=horizontal]/stepper:w-[calc(100%-1.75rem)] group-data-[orientation=horizontal]/stepper:flex-none" />
+                      ) : null}
+                    </StepperItem>
+                  );
+                })}
+              </Stepper>
+              {run.score ? (
+                <p data-testid="vf-run-score" className="mt-2 flex flex-wrap items-center gap-2">
+                  Score: <Badge>{run.score.value}</Badge>
+                  <span className="text-muted-foreground">
+                    (judge: <span data-testid="vf-run-judge">{run.judge_agent_id}</span>; STT:{" "}
+                    <span data-testid="vf-run-stt">{run.transcription_agent_id}</span>)
+                  </span>
+                </p>
+              ) : null}
+            </CardContent>
+          </Card>
         ) : null}
 
-        <label>
-          Add local recording
-          <input
-            data-testid="vf-upload"
-            type="file"
-            accept="audio/*"
-            style={{ display: "block", width: "100%", marginTop: 4 }}
-            onChange={(e) => void onUpload(e.target.files?.[0] ?? null)}
-          />
-        </label>
-        <p style={{ color: theme.color.textMuted, fontSize: "0.85rem", margin: 0 }}>
-          Uploads stay in this browser session only. Preloaded demos are permanent.
-        </p>
-
-        <label>
-          Transcription agent (owns transcript + summary)
-          <select
-            data-testid="vf-agent-stt"
-            value={sttId}
-            onChange={(e) => setSttId(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 4 }}
-          >
-            {sttAgents.map((a) => (
-              <option key={a.id} value={a.id} disabled={!a.available}>
-                {a.label}
-                {!a.available ? " (unavailable)" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label>
-          Judge agent
-          <select
-            data-testid="vf-agent-judge"
-            value={judgeId}
-            onChange={(e) => setJudgeId(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 4 }}
-          >
-            {judgeAgents.map((a) => (
-              <option key={a.id} value={a.id} disabled={!a.available}>
-                {a.highlight ? "★ " : ""}
-                {a.label}
-                {a.highlight ? " (stronger)" : ""}
-                {!a.available ? " (unavailable)" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <div style={{ display: "flex", flexWrap: "wrap", gap: theme.space }}>
-          <button
-            data-testid="vf-run"
-            type="button"
-            disabled={!canRun}
-            onClick={() => void onRun()}
-            style={{
-              background: theme.color.primary,
-              color: "#fff",
-              border: "none",
-              padding: `${theme.space}px ${theme.space * 2}px`,
-              cursor: canRun ? "pointer" : "not-allowed",
-              opacity: canRun ? 1 : 0.5,
-            }}
-          >
-            {busy ? "Running…" : "Run pipeline"}
-          </button>
-          <button
-            data-testid="vf-demo-reset"
-            type="button"
-            onClick={() => void onClearDemo()}
-            style={{
-              background: "transparent",
-              color: theme.color.text,
-              border: `1px solid ${theme.color.textMuted}`,
-              padding: `${theme.space}px ${theme.space * 2}px`,
-              cursor: "pointer",
-            }}
-          >
-            Clear demo data
-          </button>
-        </div>
-      </section>
-
-      {error && (
-        <p
-          data-testid="vf-error"
-          data-error-code={errorCode ?? undefined}
-          style={{
-            color: theme.color.danger,
-            background: "rgba(155, 44, 44, 0.1)",
-            borderLeft: `4px solid ${theme.color.danger}`,
-            padding: theme.space,
-          }}
-          role="alert"
-        >
-          {errorCode ? `[${errorCode}] ` : ""}
-          {error}
-        </p>
-      )}
-
-      <div data-testid="vf-flow" style={flowStyle}>
-        {run && (
-          <section data-testid="vf-stages">
-            <h2 style={{ fontSize: "1.1rem" }}>Pipeline</h2>
-            <ul>
-              {run.stages.map((s) => (
-                <li key={s.name}>
-                  {s.name}: {s.status}
-                </li>
-              ))}
-            </ul>
-            {run.score && (
-              <p data-testid="vf-run-score">
-                Score: {run.score.value} (judge:{" "}
-                <span data-testid="vf-run-judge">{run.judge_agent_id}</span>; STT:{" "}
-                <span data-testid="vf-run-stt">{run.transcription_agent_id}</span>)
-              </p>
-            )}
-          </section>
-        )}
-
         {run?.transcript ? (
-          <section>
-            <h2 style={{ fontSize: "1.1rem" }}>Transcript</h2>
-            <p style={{ fontSize: "0.85rem", color: theme.color.textMuted }} data-testid="vf-transcript-owner">
-              From agent: {run.transcription_agent_id}
-            </p>
-            <pre data-testid="vf-transcript" style={panelStyle}>
-              {run.transcript}
-            </pre>
-          </section>
+          <Card size="sm">
+            <CardHeader>
+              <CardTitle>Transcript</CardTitle>
+              <CardDescription data-testid="vf-transcript-owner">
+                From agent: {run.transcription_agent_id}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <pre data-testid="vf-transcript" className={panelClass}>
+                {run.transcript}
+              </pre>
+            </CardContent>
+          </Card>
         ) : null}
 
         {run?.summary ? (
-          <section data-testid="vf-rationale">
-            <h2 style={{ fontSize: "1.1rem" }}>Summary</h2>
-            <p style={{ fontSize: "0.85rem", color: theme.color.textMuted }} data-testid="vf-summary-owner">
-              From agent: {run.summary_owner_agent_id || run.transcription_agent_id}
-            </p>
-            <pre
-              data-testid="vf-summary"
-              title={rationale || "No rationale yet"}
-              onMouseEnter={() => rationale && setRationaleOpen(true)}
-              style={panelStyle}
-            >
-              {run.summary}
-            </pre>
-            <button
-              type="button"
-              data-testid="vf-rationale-toggle"
-              onClick={() => setRationaleOpen((o) => !o)}
-              style={{ marginTop: 8 }}
-            >
-              Why this score?
-            </button>
-            {rationaleOpen ? (
-              <pre data-testid="vf-rationale-text" style={{ ...panelStyle, marginTop: 8 }}>
-                {rationale || "No rationale available for this run."}
+          <Card data-testid="vf-rationale" size="sm">
+            <CardHeader>
+              <CardTitle>Summary</CardTitle>
+              <CardDescription data-testid="vf-summary-owner">
+                From agent: {run.summary_owner_agent_id || run.transcription_agent_id}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <pre
+                data-testid="vf-summary"
+                title={rationale || "No rationale yet"}
+                onMouseEnter={() => rationale && setRationaleOpen(true)}
+                className={panelClass}
+              >
+                {run.summary}
               </pre>
-            ) : null}
-          </section>
+              <Accordion
+                type="single"
+                collapsible
+                className="mt-2"
+                value={rationaleOpen ? "why" : ""}
+                onValueChange={(v) => setRationaleOpen(v === "why")}
+              >
+                <AccordionItem value="why">
+                  <AccordionTrigger data-testid="vf-rationale-toggle">Why this score?</AccordionTrigger>
+                  <AccordionContent>
+                    <pre data-testid="vf-rationale-text" className={panelClass}>
+                      {rationale || "No rationale available for this run."}
+                    </pre>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </CardContent>
+          </Card>
         ) : null}
 
-        <section data-testid="vf-overall">
-          <h2 style={{ fontSize: "1.1rem" }}>Overall</h2>
-          <p>
-            {dash.overall_percentage == null
-              ? "No scores yet"
-              : `${dash.overall_percentage}% (${dash.completed_count} completed)`}
-          </p>
-        </section>
+        <Card data-testid="vf-overall" size="sm">
+          <CardHeader>
+            <CardTitle>Overall</CardTitle>
+            <CardDescription>Session aggregate faithfulness</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {dash.overall_percentage == null ? (
+              <p className="m-0 text-muted-foreground">No scores yet</p>
+            ) : (
+              <div className="flex flex-wrap items-center gap-4">
+                <CircularProgress
+                  value={dash.overall_percentage}
+                  showLabel
+                  size={112}
+                  strokeWidth={10}
+                  className="stroke-primary/20"
+                  progressClassName="stroke-primary"
+                  labelClassName="text-lg font-semibold text-primary"
+                  renderLabel={(v) => `${v}%`}
+                />
+                <Badge variant="secondary">{dash.completed_count} completed</Badge>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      <section data-testid="vf-history" style={{ marginBottom: theme.space * 2 }}>
-        <h2 style={{ fontSize: "1.1rem" }}>Session history</h2>
-        {history.length === 0 ? (
-          <p data-testid="vf-history-empty">No runs yet</p>
-        ) : (
-          <ul>
-            {history.map((h) => (
-              <li key={h.id} data-testid="vf-history-row">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRun(h);
-                    setRationaleOpen(false);
-                  }}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    padding: 0,
-                    color: theme.color.primary,
-                    cursor: "pointer",
-                    textAlign: "left",
-                    fontFamily: "inherit",
-                  }}
-                >
-                  {h.status} — STT {h.transcription_agent_id}; judge {h.judge_agent_id}
-                  {h.score ? ` — ${h.score.value}%` : ""}
-                </button>
-                {h.summary ? (
-                  <div style={{ fontSize: "0.85rem", color: theme.color.textMuted }}>
-                    Summary: {h.summary.slice(0, 120)}
-                    {h.summary.length > 120 ? "…" : ""}
-                  </div>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <Card data-testid="vf-history" className="mb-4" size="sm">
+        <CardHeader>
+          <CardTitle>Session history</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {history.length === 0 ? (
+            <p data-testid="vf-history-empty" className="m-0 text-muted-foreground">
+              No runs yet
+            </p>
+          ) : (
+            <ul className="m-0 list-none space-y-2 p-0">
+              {history.map((h) => (
+                <li key={h.id} data-testid="vf-history-row">
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="h-auto p-0 text-left whitespace-normal"
+                    onClick={() => {
+                      setRun(h);
+                      setRationaleOpen(false);
+                    }}
+                  >
+                    {h.status} — STT {h.transcription_agent_id}; judge {h.judge_agent_id}
+                    {h.score ? ` — ${h.score.value}%` : ""}
+                  </Button>
+                  {h.summary ? (
+                    <div className="text-xs text-muted-foreground">
+                      Summary: {h.summary.slice(0, 120)}
+                      {h.summary.length > 120 ? "…" : ""}
+                    </div>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
       <DashboardGraphs
         views={graphViews}
@@ -664,16 +726,20 @@ export default function App() {
         completedCount={dash.completed_count}
       />
 
-      <section data-testid="vf-scores">
-        <h2 style={{ fontSize: "1.1rem" }}>Scores</h2>
-        <ul>
-          {dash.scores.map((s) => (
-            <li key={s.run_id ?? s.recording_id} data-testid="vf-score-row">
-              {s.title}: {s.value}% — STT: {s.transcription_agent_id}; judge: {s.judge_agent_id}
-            </li>
-          ))}
-        </ul>
-      </section>
+      <Card data-testid="vf-scores" size="sm" className="mt-4">
+        <CardHeader>
+          <CardTitle>Scores</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="m-0 list-disc space-y-1 pl-5">
+            {dash.scores.map((s) => (
+              <li key={s.run_id ?? s.recording_id} data-testid="vf-score-row">
+                {s.title}: {s.value}% — STT: {s.transcription_agent_id}; judge: {s.judge_agent_id}
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
     </main>
   );
 }
