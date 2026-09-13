@@ -1,12 +1,4 @@
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 import { theme } from "../../theme";
 
 type Props = {
@@ -14,27 +6,65 @@ type Props = {
   completedCount: number;
 };
 
+/** Armory-style SLA ring: one hero % instead of a redundant single bar. */
 export function OverallAggregate({ overallPercentage, completedCount }: Props) {
   if (overallPercentage == null || completedCount === 0) {
     return <p data-testid="vf-graph-empty">No scores yet</p>;
   }
 
-  const data = [{ name: "Overall", value: overallPercentage }];
+  const clamped = Math.max(0, Math.min(100, overallPercentage));
+  const data = [
+    { name: "score", value: clamped },
+    { name: "rest", value: Math.max(0, 100 - clamped) },
+  ];
 
   return (
-    <div data-testid="vf-graph-overall" style={{ width: "100%", height: 220 }}>
+    <div data-testid="vf-graph-overall" style={{ width: "100%", height: 240, position: "relative" }}>
       <ResponsiveContainer>
-        <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
-          <CartesianGrid stroke={theme.color.line} strokeDasharray="3 3" />
-          <XAxis dataKey="name" tick={{ fill: theme.color.textMuted, fontSize: 11 }} />
-          <YAxis domain={[0, 100]} tick={{ fill: theme.color.textMuted, fontSize: 11 }} />
-          <Tooltip />
-          <Bar dataKey="value" fill={theme.color.primary} name="Overall %" />
-        </BarChart>
+        <PieChart>
+          <Pie
+            data={data}
+            dataKey="value"
+            cx="50%"
+            cy="50%"
+            innerRadius="68%"
+            outerRadius="88%"
+            startAngle={90}
+            endAngle={-270}
+            stroke="none"
+            isAnimationActive={false}
+          >
+            <Cell fill={theme.color.primary} />
+            <Cell fill={theme.color.line} />
+          </Pie>
+        </PieChart>
       </ResponsiveContainer>
-      <p style={{ color: theme.color.textMuted, fontSize: "0.9rem" }}>
-        Mean of {completedCount} completed score{completedCount === 1 ? "" : "s"}: {overallPercentage}%
-      </p>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          pointerEvents: "none",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: theme.font.display,
+            fontSize: "2.25rem",
+            fontWeight: 600,
+            color: theme.color.ink,
+            lineHeight: 1,
+          }}
+        >
+          {overallPercentage}%
+        </div>
+        <div style={{ color: theme.color.textMuted, fontSize: "0.85rem", marginTop: 6 }}>
+          Mean of {completedCount} score{completedCount === 1 ? "" : "s"}
+        </div>
+      </div>
     </div>
   );
 }
