@@ -1,16 +1,406 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&display=swap");
+
 :root {
-  /* Interim tokens from ui-design.md (teal + cool mist) until theme.ts lands */
-  color: #1a242e;
-  background: #e8eef2;
-  font-family: "Segoe UI", system-ui, sans-serif;
+  color: #14202b;
+  background-color: #e6edf2;
+  background-image:
+    radial-gradient(ellipse 120% 80% at 10% -20%, rgba(11, 95, 82, 0.08), transparent 55%),
+    radial-gradient(ellipse 90% 60% at 100% 0%, rgba(90, 110, 140, 0.12), transparent 50%);
+  font-family: "DM Sans", "Segoe UI", sans-serif;
+  line-height: 1.45;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
+  min-height: 100vh;
 }
 
-main {
-  max-width: 40rem;
-  margin: 2rem auto;
-  padding: 1rem;
+button,
+select,
+input[type="file"] {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.vf-mode-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+}
+
+.vf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid #b8c5d1;
+  background: rgba(255, 255, 255, 0.7);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  color: #14202b;
+}
+
+.vf-chip--stub {
+  border-color: #8f2f2f;
+  background: rgba(143, 47, 47, 0.1);
+  color: #8f2f2f;
+}
+
+.vf-chip--live,
+.vf-chip--live.vf-chip {
+  border-color: #0b5f52;
+  background: rgba(11, 95, 82, 0.1);
+  color: #0b5f52;
+}
+
+.vf-chip--warn {
+  border-color: #8f2f2f;
+  color: #8f2f2f;
+}
+
+.vf-chip--hint {
+  margin-left: auto;
+  opacity: 0.75;
+  border-style: dashed;
+}
+
+.vf-pipeline-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.vf-pipeline-label {
+  margin: 0;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #5c6b7a;
+}
+
+.vf-status-ribbon {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.vf-status-ribbon li button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid #b8c5d1;
+  background: rgba(255, 255, 255, 0.65);
+  padding: 0.3rem 0.55rem;
+  font-size: 0.72rem;
+  color: #5c6b7a;
+}
+
+.vf-status-ribbon li.is-active button {
+  border-color: #0b5f52;
+  color: #0a1218;
+  background: #fff;
+}
+
+.vf-status-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: #b8c5d1;
+  flex-shrink: 0;
+}
+
+.vf-status-dot--running {
+  background: #c9851a;
+  box-shadow: 0 0 0 3px rgba(201, 133, 26, 0.2);
+}
+
+.vf-status-dot--done {
+  background: #0b5f52;
+}
+
+.vf-status-dot--failed {
+  background: #8f2f2f;
+}
+
+.vf-status-dot--idle {
+  background: #b8c5d1;
+}
+
+/* Master board: stages + detail pane */
+.vf-pipeline-board[data-layout="desktop"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 38%);
+  gap: 1rem;
+  align-items: start;
+}
+
+.vf-pipeline-board[data-layout="mobile"] {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+/* Pipeline stage columns — desktop LTR is forced here so tests/layout cannot silently regress */
+[data-testid="vf-flow"][data-layout="desktop"] {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 0.75rem;
+  align-items: stretch;
+  position: relative;
+}
+
+[data-testid="vf-flow"][data-layout="mobile"] {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 0.75rem;
+}
+
+.vf-flow-nodes[data-layout="desktop"] .vf-stage:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 1.35rem;
+  right: -0.45rem;
+  width: 0.45rem;
+  height: 1px;
+  background: #8aa0b0;
+  pointer-events: none;
+}
+
+.vf-flow-nodes[data-layout="desktop"] .vf-stage {
+  position: relative;
+}
+
+.vf-stage {
+  min-width: 0;
+  width: 100%;
+  text-align: left;
+  background: #f8fbfc;
+  border: 1px solid #b8c5d1;
+  border-radius: 2px;
+  padding: 0.85rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  color: inherit;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    opacity 180ms ease,
+    transform 180ms ease,
+    filter 180ms ease;
+}
+
+.vf-stage-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.vf-stage:hover {
+  border-color: #0b5f52;
+}
+
+.vf-stage:focus-visible {
+  outline: 2px solid #0b5f52;
+  outline-offset: 2px;
+}
+
+.vf-stage.is-selected {
+  background: #ffffff;
+  border-color: #0b5f52;
+  box-shadow: inset 3px 0 0 #0b5f52;
+  transform: translateY(-2px);
+  z-index: 1;
+}
+
+.vf-pipeline-board[data-focus="on"] .vf-stage.is-dimmed {
+  opacity: 0.42;
+  filter: saturate(0.7);
+}
+
+.vf-stage .vf-stage-num,
+.vf-stage-detail .vf-stage-num {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5c6b7a;
+  margin: 0;
+}
+
+.vf-stage h2,
+.vf-stage-detail h2 {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: clamp(1rem, 1.4vw, 1.15rem);
+  font-weight: 600;
+  margin: 0;
+  color: #0a1218;
+}
+
+.vf-stage-peek {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #5c6b7a;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.vf-stage-meta {
+  margin: 0;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  color: #5c6b7a;
+}
+
+.vf-stage-score {
+  margin: 0;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
+}
+
+.vf-stage-score span {
+  font-size: 0.85rem;
+  color: #5c6b7a;
+}
+
+.vf-stage-body {
+  flex: 1;
+  max-height: min(55vh, 420px);
+  overflow: auto;
+  white-space: pre-wrap;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.82rem;
+  background: rgba(0, 0, 0, 0.03);
+  padding: 0.75rem;
+  margin: 0;
+  border-radius: 2px;
+}
+
+.vf-stage-detail {
+  min-width: 0;
+  min-height: 12rem;
+  background: #ffffff;
+  border: 1px solid #b8c5d1;
+  border-radius: 2px;
+  padding: 1rem 1.1rem;
+  position: sticky;
+  top: 0.75rem;
+  transition:
+    border-color 160ms ease,
+    box-shadow 180ms ease;
+}
+
+.vf-stage-detail.is-open {
+  border-color: #0b5f52;
+  box-shadow: 0 10px 28px rgba(20, 32, 43, 0.08);
+}
+
+.vf-detail-headline {
+  margin: 0 0 0.85rem;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #0a1218;
+}
+
+.vf-detail-why {
+  margin-top: 0.35rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #b8c5d1;
+}
+
+.vf-stage-detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #b8c5d1;
+}
+
+.vf-stage-detail-head button {
+  border: 1px solid #b8c5d1;
+  background: transparent;
+  padding: 0.35rem 0.7rem;
+  border-radius: 2px;
+  color: #14202b;
+}
+
+.vf-stage-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.vf-stage-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+}
+
+.vf-linkish {
+  margin-top: 4px;
+  border: none;
+  background: transparent;
+  color: #0b5f52;
+  padding: 0;
+  text-decoration: underline;
+  font-size: 0.85rem;
+  align-self: flex-start;
+}
+
+[data-testid="vf-history"] {
+  border-top: 1px solid #b8c5d1;
+  padding-top: 1.25rem;
+}
+
+[data-testid="vf-view-toggle"] button {
+  border: 1px solid #b8c5d1;
+  background: transparent;
+  color: #14202b;
+  padding: 0.4rem 0.85rem;
+  border-radius: 2px;
+}
+
+[data-testid="vf-view-toggle"] button[aria-pressed="true"] {
+  background: #0b5f52;
+  border-color: #0b5f52;
+  color: #fff;
+}
+
+@media (max-width: 1100px) {
+  .vf-pipeline-board[data-layout="desktop"] {
+    grid-template-columns: 1fr;
+  }
+
+  .vf-stage-detail {
+    position: static;
+  }
+
+  .vf-chip--hint {
+    margin-left: 0;
+  }
 }

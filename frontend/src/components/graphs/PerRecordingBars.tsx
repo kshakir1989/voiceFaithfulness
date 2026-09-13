@@ -13,6 +13,8 @@ export type ScorePoint = {
   recording_id: string;
   title: string;
   value: number;
+  transcription_agent_id?: string;
+  judge_agent_id?: string;
 };
 
 type Props = {
