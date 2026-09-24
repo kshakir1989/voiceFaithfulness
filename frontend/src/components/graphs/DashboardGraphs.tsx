@@ -1,14 +1,8 @@
 import { PerRecordingBars, type ScorePoint } from "./PerRecordingBars";
 import { OverallAggregate } from "./OverallAggregate";
-import { AgentCompare } from "./AgentCompare";
-import { SessionSparkline } from "./SessionSparkline";
 import { theme } from "../../theme";
 
-export type GraphViewId =
-  | "per_recording_bars"
-  | "overall_aggregate"
-  | "agent_compare"
-  | "session_sparkline";
+export type GraphViewId = "per_recording_bars" | "overall_aggregate";
 
 type GraphView = { id: GraphViewId; label: string };
 
@@ -31,7 +25,7 @@ export function DashboardGraphs({
 }: Props) {
   return (
     <section data-testid="vf-graphs" style={{ marginBottom: theme.space * 2 }}>
-      <h2 style={{ fontFamily: theme.font.display, fontSize: "1.25rem" }}>Graphs</h2>
+      <h2 style={{ fontSize: "1.1rem" }}>Graphs</h2>
       <label style={{ display: "block", marginBottom: theme.space }}>
         View
         <select
@@ -49,12 +43,8 @@ export function DashboardGraphs({
       </label>
       {selected === "per_recording_bars" ? (
         <PerRecordingBars scores={scores} />
-      ) : selected === "overall_aggregate" ? (
-        <OverallAggregate overallPercentage={overallPercentage} completedCount={completedCount} />
-      ) : selected === "agent_compare" ? (
-        <AgentCompare scores={scores} />
       ) : (
-        <SessionSparkline scores={scores} />
+        <OverallAggregate overallPercentage={overallPercentage} completedCount={completedCount} />
       )}
     </section>
   );
