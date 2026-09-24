@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 async function resetMockStore(page: import("@playwright/test").Page) {
   const r = await page.request.post("/api/dev/reset");
