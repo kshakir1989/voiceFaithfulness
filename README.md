@@ -194,7 +194,10 @@ npm run dev
 ```bash
 cd backend && source .venv/bin/activate && FORCE_MOCK_PROVIDERS=1 pytest
 cd frontend && npm run test:e2e
+cd frontend && npm run test:coverage
 ```
+
+`test:coverage` runs the same Playwright e2e suite with Chromium V8 coverage via Monocart (report-only). Open `frontend/coverage/index.html` or `frontend/coverage/lcov.info`. Filtered to `src/`.
 
 Gherkin in `features/*.feature` is living documentation. Executable UI coverage is Playwright in `frontend/e2e/`. Without `GROQ_API_KEY` (or with `FORCE_MOCK_PROVIDERS=1`), providers use mocks — the SPA shows **Stub mode** and marks dashboard percentages as stubbed.
 

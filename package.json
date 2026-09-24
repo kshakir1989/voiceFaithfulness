@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "test:e2e": "npm --prefix frontend run test:e2e",
+    "test:coverage": "npm --prefix frontend run test:coverage",
     "dev:web": "npm --prefix frontend run dev"
   }
 }
