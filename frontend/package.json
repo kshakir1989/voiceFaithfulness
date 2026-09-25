@@ -6,6 +6,7 @@
   "scripts": {
     "test:e2e": "playwright test",
     "test:coverage": "COVERAGE=1 playwright test --config playwright.coverage.config.ts",
+    "test:qaiq": "qaiq .",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview"
@@ -17,6 +18,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",
+    "@rafaellabarrocas/qaiq": "^0.1.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.0",

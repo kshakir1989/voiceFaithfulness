@@ -4,6 +4,7 @@
   "scripts": {
     "test:e2e": "npm --prefix frontend run test:e2e",
     "test:coverage": "npm --prefix frontend run test:coverage",
+    "test:qaiq": "npm --prefix frontend run test:qaiq",
     "dev:web": "npm --prefix frontend run dev"
   }
 }
