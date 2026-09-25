@@ -2,7 +2,7 @@
 
 GitHub: `kshakir1989/voiceFaithfulness`. This repository is **voiceFaithfulness only**. Do not edit other FreshUSA products or other GitHub repos in the same session.
 
-- **Teach-Along (NON-NEGOTIABLE):** Before each non-trivial step, pause and teach: (1) what will change, (2) why this option over alternatives, (3) how it fits voiceFaithfulness. Wait for **go**, a question, or an explicit skip.
+- **Action-Report (NON-NEGOTIABLE):** Before each non-trivial step, pause with bullets of concrete changes plus an Explanation paragraph (not What/Why/How). Wait for **go**, a question, or an explicit skip.
 - Ask before commands, edits, commits, or deploys unless the owner already said **go** on that chunk.
 - Spec first for user-facing behavior. Do not commit `plan.md` unless the owner asks.
 - Keep `spec-architecture.png` current when Spec Kit artifacts change.
