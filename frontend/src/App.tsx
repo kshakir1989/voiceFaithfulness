@@ -1,8 +1,8 @@
 /**
- * SPA: editorial learning flow — audio → transcript → summary → judge → aggregate.
- * Desktop: forced 5-column LTR stage board. Mobile: stacked stages.
+ * SPA: picker + upload + preview + STT/judge + run + transcript/summary +
+ * rationale + history + layout toggle + demo reset (002 live pipeline flow).
  */
-import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { theme } from "./theme";
 import { DashboardGraphs, type GraphViewId } from "./components/graphs/DashboardGraphs";
 
@@ -63,6 +63,17 @@ const emptyDash: Dashboard = { overall_percentage: null, completed_count: 0, sco
 const PIPELINE_TEACH = ["transcript", "summary", "judge", "aggregate"] as const;
 const VIEW_KEY = "vf_view_mode";
 
+const panelStyle: CSSProperties = {
+  maxHeight: 160,
+  overflow: "auto",
+  whiteSpace: "pre-wrap",
+  background: "rgba(0,0,0,0.04)",
+  padding: 12,
+  margin: 0,
+  fontFamily: "ui-monospace, Menlo, monospace",
+  fontSize: "0.9rem",
+};
+
 function initialViewMode(): ViewMode {
   try {
     const stored = sessionStorage.getItem(VIEW_KEY);
@@ -70,30 +81,10 @@ function initialViewMode(): ViewMode {
   } catch {
     /* ignore */
   }
-  if (typeof window !== "undefined" && window.matchMedia("(max-width: 900px)").matches) {
+  if (typeof window !== "undefined" && window.matchMedia("(max-width: 720px)").matches) {
     return "mobile";
   }
   return "desktop";
-}
-
-function StageCard({
-  num,
-  title,
-  children,
-  testId,
-}: {
-  num: string;
-  title: string;
-  children: ReactNode;
-  testId: string;
-}) {
-  return (
-    <article data-testid={testId} className="vf-stage">
-      <div className="vf-stage-num">{num}</div>
-      <h2>{title}</h2>
-      {children}
-    </article>
-  );
 }
 
 export default function App() {
@@ -119,17 +110,14 @@ export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>(initialViewMode);
   const [rationaleOpen, setRationaleOpen] = useState(false);
 
-  const showTeach = useCallback(
-    (concept: string, catalog?: Record<string, string>) => {
-      const map = catalog ?? teachByConcept;
-      const body = map[concept];
-      if (!body) return;
-      setTeach(body);
-      setTeachConcept(concept);
-      setTeachSeen((prev) => (prev.includes(concept) ? prev : [...prev, concept]));
-    },
-    [teachByConcept],
-  );
+  const showTeach = useCallback((concept: string, catalog?: Record<string, string>) => {
+    const map = catalog ?? teachByConcept;
+    const body = map[concept];
+    if (!body) return;
+    setTeach(body);
+    setTeachConcept(concept);
+    setTeachSeen((prev) => (prev.includes(concept) ? prev : [...prev, concept]));
+  }, [teachByConcept]);
 
   const presentPipelineTeaching = useCallback(async (catalog: Record<string, string>) => {
     for (const concept of PIPELINE_TEACH) {
@@ -327,89 +315,55 @@ export default function App() {
         { id: "per_recording_bars" as const, label: "Per-recording scores" },
         { id: "overall_aggregate" as const, label: "Overall aggregate" },
       ];
-  const rationale = run?.score?.rationale ?? null;
-  const stageStatus = (name: string) => run?.stages.find((s) => s.name === name)?.status;
 
-  const shellStyle: CSSProperties = {
-    width: "100%",
-    maxWidth: viewMode === "desktop" ? 1280 : 640,
-    margin: "0 auto",
-    padding: `max(${theme.space * 2}px, env(safe-area-inset-top)) max(${theme.space * 2}px, env(safe-area-inset-right)) max(${theme.space * 3}px, env(safe-area-inset-bottom)) max(${theme.space * 2}px, env(safe-area-inset-left))`,
-    color: theme.color.text,
-    fontFamily: theme.font.body,
-    minHeight: "100vh",
-  };
-
-  const controlsStyle: CSSProperties =
+  const flowStyle: CSSProperties =
     viewMode === "desktop"
       ? {
           display: "grid",
-          gridTemplateColumns: "1.2fr 1fr 1fr auto",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
           gap: theme.space * 1.5,
-          alignItems: "end",
           marginBottom: theme.space * 2,
-          padding: theme.space * 1.5,
-          background: theme.color.surfaceRaised,
-          border: `1px solid ${theme.color.line}`,
         }
-      : {
-          display: "grid",
-          gap: theme.space * 1.25,
-          marginBottom: theme.space * 2,
-          padding: theme.space * 1.5,
-          background: theme.color.surfaceRaised,
-          border: `1px solid ${theme.color.line}`,
-        };
+      : { display: "grid", gap: theme.space * 1.5, marginBottom: theme.space * 2 };
+
+  const rationale = run?.score?.rationale ?? null;
 
   return (
-    <main data-testid="vf-shell" data-view-mode={viewMode} style={shellStyle}>
-      <header
+    <main
+      data-testid="vf-shell"
+      data-view-mode={viewMode}
+      style={{
+        maxWidth: viewMode === "desktop" ? 1100 : 720,
+        width: "100%",
+        boxSizing: "border-box",
+        margin: "0 auto",
+        padding: `max(${theme.space * 2}px, env(safe-area-inset-top)) max(${theme.space * 2}px, env(safe-area-inset-right)) max(${theme.space * 2}px, env(safe-area-inset-bottom)) max(${theme.space * 2}px, env(safe-area-inset-left))`,
+        color: theme.color.text,
+        background: theme.color.background,
+        minHeight: "100vh",
+        fontFamily: "Georgia, 'Times New Roman', serif",
+      }}
+    >
+      <div
         style={{
           display: "flex",
           flexWrap: "wrap",
           gap: theme.space,
-          alignItems: "baseline",
+          alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: theme.space * 2,
-          borderBottom: `1px solid ${theme.color.line}`,
-          paddingBottom: theme.space * 1.5,
+          marginBottom: theme.space,
         }}
       >
-        <div>
-          <p
-            style={{
-              margin: 0,
-              fontFamily: theme.font.mono,
-              fontSize: "0.7rem",
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: theme.color.textMuted,
-            }}
-          >
-            LLM-as-judge lesson
-          </p>
-          <h1
-            style={{
-              fontFamily: theme.font.display,
-              fontSize: "clamp(2rem, 4vw, 2.75rem)",
-              fontWeight: 600,
-              margin: "0.15rem 0 0",
-              letterSpacing: "-0.02em",
-              color: theme.color.ink,
-            }}
-          >
-            voiceFaithfulness
-          </h1>
-        </div>
+        <h1 style={{ fontSize: "2rem", margin: 0 }}>voiceFaithfulness</h1>
         <div data-testid="vf-view-toggle" role="group" aria-label="Layout view">
           <button
             type="button"
             data-testid="vf-view-desktop"
             aria-pressed={viewMode === "desktop"}
             onClick={() => setView("desktop")}
-            style={{ marginRight: 6 }}
+            style={{ marginRight: 8 }}
           >
-            Desktop · LTR
+            Desktop
           </button>
           <button
             type="button"
@@ -417,19 +371,20 @@ export default function App() {
             aria-pressed={viewMode === "mobile"}
             onClick={() => setView("mobile")}
           >
-            Mobile · stack
+            Mobile
           </button>
         </div>
-      </header>
+      </div>
 
       <p
         data-testid="vf-providers-mode"
         role="status"
         style={{
           marginTop: 0,
-          padding: `${theme.space}px ${theme.space * 1.5}px`,
-          background: providersMode === "stub" ? theme.color.dangerSoft : theme.color.primarySoft,
-          borderLeft: `3px solid ${providersMode === "stub" ? theme.color.danger : theme.color.primary}`,
+          padding: theme.space,
+          background: providersMode === "stub" ? "rgba(155, 44, 44, 0.12)" : "rgba(15, 107, 92, 0.12)",
+          color: theme.color.text,
+          borderLeft: `4px solid ${providersMode === "stub" ? theme.color.danger : theme.color.primary}`,
         }}
       >
         {providersMode === "stub"
@@ -454,25 +409,20 @@ export default function App() {
       </p>
       <p
         data-testid="vf-teach-log"
-        style={{
-          color: theme.color.textMuted,
-          fontSize: "0.8rem",
-          marginTop: 0,
-          fontFamily: theme.font.mono,
-        }}
+        style={{ color: theme.color.textMuted, fontSize: "0.85rem", marginTop: 0 }}
         aria-live="polite"
       >
-        Concepts: {teachSeen.join(" · ") || "none yet"}
+        Concepts covered: {teachSeen.join(", ") || "none yet"}
       </p>
 
-      <section style={controlsStyle} data-testid="vf-controls">
-        <label style={{ display: "block" }}>
+      <section style={{ display: "grid", gap: theme.space * 1.5, marginBottom: theme.space * 2 }}>
+        <label>
           Recording
           <select
             data-testid="vf-recording-picker"
             value={recordingId}
             onChange={(e) => setRecordingId(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 4, padding: 6 }}
+            style={{ display: "block", width: "100%", marginTop: 4 }}
           >
             {recordings.map((rec) => (
               <option key={rec.id} value={rec.id}>
@@ -483,13 +433,36 @@ export default function App() {
           </select>
         </label>
 
-        <label style={{ display: "block" }}>
-          Transcription agent
+        {previewUrl ? (
+          <div>
+            <div style={{ marginBottom: 4 }}>Preview</div>
+            <audio data-testid="vf-audio-preview" controls src={previewUrl} style={{ width: "100%" }}>
+              Your browser does not support audio.
+            </audio>
+          </div>
+        ) : null}
+
+        <label>
+          Add local recording
+          <input
+            data-testid="vf-upload"
+            type="file"
+            accept="audio/*"
+            style={{ display: "block", width: "100%", marginTop: 4 }}
+            onChange={(e) => void onUpload(e.target.files?.[0] ?? null)}
+          />
+        </label>
+        <p style={{ color: theme.color.textMuted, fontSize: "0.85rem", margin: 0 }}>
+          Uploads stay in this browser session only. Preloaded demos are permanent.
+        </p>
+
+        <label>
+          Transcription agent (owns transcript + summary)
           <select
             data-testid="vf-agent-stt"
             value={sttId}
             onChange={(e) => setSttId(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 4, padding: 6 }}
+            style={{ display: "block", width: "100%", marginTop: 4 }}
           >
             {sttAgents.map((a) => (
               <option key={a.id} value={a.id} disabled={!a.available}>
@@ -500,13 +473,13 @@ export default function App() {
           </select>
         </label>
 
-        <label style={{ display: "block" }}>
+        <label>
           Judge agent
           <select
             data-testid="vf-agent-judge"
             value={judgeId}
             onChange={(e) => setJudgeId(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 4, padding: 6 }}
+            style={{ display: "block", width: "100%", marginTop: 4 }}
           >
             {judgeAgents.map((a) => (
               <option key={a.id} value={a.id} disabled={!a.available}>
@@ -519,7 +492,7 @@ export default function App() {
           </select>
         </label>
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: theme.space, alignItems: "center" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: theme.space }}>
           <button
             data-testid="vf-run"
             type="button"
@@ -530,6 +503,7 @@ export default function App() {
               color: "#fff",
               border: "none",
               padding: `${theme.space}px ${theme.space * 2}px`,
+              cursor: canRun ? "pointer" : "not-allowed",
               opacity: canRun ? 1 : 0.5,
             }}
           >
@@ -541,44 +515,16 @@ export default function App() {
             onClick={() => void onClearDemo()}
             style={{
               background: "transparent",
-              border: `1px solid ${theme.color.line}`,
-              padding: `${theme.space}px ${theme.space * 1.5}px`,
+              color: theme.color.text,
+              border: `1px solid ${theme.color.textMuted}`,
+              padding: `${theme.space}px ${theme.space * 2}px`,
+              cursor: "pointer",
             }}
           >
-            Clear demo
+            Clear demo data
           </button>
         </div>
       </section>
-
-      {previewUrl ? (
-        <div style={{ marginBottom: theme.space * 2 }}>
-          <div
-            style={{
-              fontFamily: theme.font.mono,
-              fontSize: "0.7rem",
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: theme.color.textMuted,
-              marginBottom: 4,
-            }}
-          >
-            Preview
-          </div>
-          <audio data-testid="vf-audio-preview" controls src={previewUrl} style={{ width: "100%" }}>
-            Your browser does not support audio.
-          </audio>
-          <label style={{ display: "block", marginTop: theme.space, fontSize: "0.9rem" }}>
-            Add local recording
-            <input
-              data-testid="vf-upload"
-              type="file"
-              accept="audio/*"
-              style={{ display: "block", marginTop: 4 }}
-              onChange={(e) => void onUpload(e.target.files?.[0] ?? null)}
-            />
-          </label>
-        </div>
-      ) : null}
 
       {error && (
         <p
@@ -586,8 +532,8 @@ export default function App() {
           data-error-code={errorCode ?? undefined}
           style={{
             color: theme.color.danger,
-            background: theme.color.dangerSoft,
-            borderLeft: `3px solid ${theme.color.danger}`,
+            background: "rgba(155, 44, 44, 0.1)",
+            borderLeft: `4px solid ${theme.color.danger}`,
             padding: theme.space,
           }}
           role="alert"
@@ -597,143 +543,87 @@ export default function App() {
         </p>
       )}
 
-      <p
-        style={{
-          fontFamily: theme.font.mono,
-          fontSize: "0.7rem",
-          letterSpacing: "0.1em",
-          textTransform: "uppercase",
-          color: theme.color.textMuted,
-          marginBottom: theme.space,
-        }}
-      >
-        Pipeline · {viewMode === "desktop" ? "left → right" : "stacked"}
-      </p>
+      <div data-testid="vf-flow" style={flowStyle}>
+        {run && (
+          <section data-testid="vf-stages">
+            <h2 style={{ fontSize: "1.1rem" }}>Pipeline</h2>
+            <ul>
+              {run.stages.map((s) => (
+                <li key={s.name}>
+                  {s.name}: {s.status}
+                </li>
+              ))}
+            </ul>
+            {run.score && (
+              <p data-testid="vf-run-score">
+                Score: {run.score.value} (judge:{" "}
+                <span data-testid="vf-run-judge">{run.judge_agent_id}</span>; STT:{" "}
+                <span data-testid="vf-run-stt">{run.transcription_agent_id}</span>)
+              </p>
+            )}
+          </section>
+        )}
 
-      <div data-testid="vf-flow" data-layout={viewMode}>
-        <StageCard num="01" title="Source" testId="vf-stage-source">
-          <p style={{ margin: 0, fontSize: "0.85rem", color: theme.color.textMuted }}>
-            {selected?.title ?? "Choose a recording"}
-          </p>
-          <p style={{ margin: 0, fontFamily: theme.font.mono, fontSize: "0.75rem" }}>
-            ingest: {stageStatus("ingest") ?? "idle"}
-          </p>
-        </StageCard>
+        {run?.transcript ? (
+          <section>
+            <h2 style={{ fontSize: "1.1rem" }}>Transcript</h2>
+            <p style={{ fontSize: "0.85rem", color: theme.color.textMuted }} data-testid="vf-transcript-owner">
+              From agent: {run.transcription_agent_id}
+            </p>
+            <pre data-testid="vf-transcript" style={panelStyle}>
+              {run.transcript}
+            </pre>
+          </section>
+        ) : null}
 
-        <StageCard num="02" title="Transcript" testId="vf-stage-transcript">
-          <p style={{ margin: 0, fontSize: "0.75rem", color: theme.color.textMuted }} data-testid="vf-transcript-owner">
-            {run ? `Agent: ${run.transcription_agent_id}` : "Awaiting run"}
-          </p>
-          <pre data-testid="vf-transcript" className="vf-stage-body">
-            {run?.transcript || "—"}
-          </pre>
-          <p style={{ margin: 0, fontFamily: theme.font.mono, fontSize: "0.75rem" }}>
-            {stageStatus("transcript") ?? "idle"}
-          </p>
-        </StageCard>
-
-        <StageCard num="03" title="Summary" testId="vf-stage-summary">
-          <p style={{ margin: 0, fontSize: "0.75rem", color: theme.color.textMuted }} data-testid="vf-summary-owner">
-            {run
-              ? `Agent: ${run.summary_owner_agent_id || run.transcription_agent_id}`
-              : "Owned by transcription agent"}
-          </p>
-          <div data-testid="vf-rationale">
+        {run?.summary ? (
+          <section data-testid="vf-rationale">
+            <h2 style={{ fontSize: "1.1rem" }}>Summary</h2>
+            <p style={{ fontSize: "0.85rem", color: theme.color.textMuted }} data-testid="vf-summary-owner">
+              From agent: {run.summary_owner_agent_id || run.transcription_agent_id}
+            </p>
             <pre
               data-testid="vf-summary"
-              className="vf-stage-body"
               title={rationale || "No rationale yet"}
               onMouseEnter={() => rationale && setRationaleOpen(true)}
+              style={panelStyle}
             >
-              {run?.summary || "—"}
+              {run.summary}
             </pre>
             <button
               type="button"
               data-testid="vf-rationale-toggle"
               onClick={() => setRationaleOpen((o) => !o)}
-              style={{
-                marginTop: 4,
-                border: "none",
-                background: "transparent",
-                color: theme.color.primary,
-                padding: 0,
-                textDecoration: "underline",
-                fontSize: "0.85rem",
-              }}
+              style={{ marginTop: 8 }}
             >
               Why this score?
             </button>
             {rationaleOpen ? (
-              <pre data-testid="vf-rationale-text" className="vf-stage-body" style={{ marginTop: 6 }}>
+              <pre data-testid="vf-rationale-text" style={{ ...panelStyle, marginTop: 8 }}>
                 {rationale || "No rationale available for this run."}
               </pre>
             ) : null}
-          </div>
-          <p style={{ margin: 0, fontFamily: theme.font.mono, fontSize: "0.75rem" }}>
-            {stageStatus("summary") ?? "idle"}
-          </p>
-        </StageCard>
+          </section>
+        ) : null}
 
-        <StageCard num="04" title="Judge" testId="vf-stage-judge">
-          {run?.score ? (
-            <p data-testid="vf-run-score" style={{ margin: 0, fontFamily: theme.font.display, fontSize: "1.75rem" }}>
-              {run.score.value}
-              <span style={{ fontSize: "0.9rem", color: theme.color.textMuted }}> / 100</span>
-            </p>
-          ) : (
-            <p style={{ margin: 0, color: theme.color.textMuted }}>—</p>
-          )}
-          <p style={{ margin: 0, fontSize: "0.75rem", color: theme.color.textMuted }}>
-            judge: <span data-testid="vf-run-judge">{run?.judge_agent_id ?? "—"}</span>
-            <br />
-            STT: <span data-testid="vf-run-stt">{run?.transcription_agent_id ?? "—"}</span>
-          </p>
-          <ul data-testid="vf-stages" style={{ margin: 0, paddingLeft: "1.1rem", fontSize: "0.8rem" }}>
-            {(run?.stages ?? []).map((s) => (
-              <li key={s.name}>
-                {s.name}: {s.status}
-              </li>
-            ))}
-          </ul>
-        </StageCard>
-
-        <StageCard num="05" title="Overall" testId="vf-overall">
-          <p style={{ margin: 0, fontFamily: theme.font.display, fontSize: "1.75rem" }}>
-            {dash.overall_percentage == null ? "—" : `${dash.overall_percentage}%`}
-          </p>
-          <p style={{ margin: 0, fontSize: "0.85rem", color: theme.color.textMuted }}>
+        <section data-testid="vf-overall">
+          <h2 style={{ fontSize: "1.1rem" }}>Overall</h2>
+          <p>
             {dash.overall_percentage == null
               ? "No scores yet"
-              : `${dash.completed_count} completed judgement${dash.completed_count === 1 ? "" : "s"}`}
+              : `${dash.overall_percentage}% (${dash.completed_count} completed)`}
           </p>
-        </StageCard>
+        </section>
       </div>
 
-      <section data-testid="vf-history" style={{ marginTop: theme.space * 3, marginBottom: theme.space * 2 }}>
-        <h2 style={{ fontFamily: theme.font.display, fontSize: "1.25rem", marginBottom: theme.space }}>
-          Session history
-        </h2>
+      <section data-testid="vf-history" style={{ marginBottom: theme.space * 2 }}>
+        <h2 style={{ fontSize: "1.1rem" }}>Session history</h2>
         {history.length === 0 ? (
-          <p data-testid="vf-history-empty" style={{ color: theme.color.textMuted }}>
-            No runs yet
-          </p>
+          <p data-testid="vf-history-empty">No runs yet</p>
         ) : (
-          <ol style={{ margin: 0, padding: 0, listStyle: "none" }}>
-            {history.map((h, i) => (
-              <li
-                key={h.id}
-                data-testid="vf-history-row"
-                style={{
-                  borderTop: `1px solid ${theme.color.line}`,
-                  padding: `${theme.space}px 0`,
-                  display: "grid",
-                  gridTemplateColumns: viewMode === "desktop" ? "3rem 1fr" : "2.5rem 1fr",
-                  gap: theme.space,
-                }}
-              >
-                <span style={{ fontFamily: theme.font.mono, color: theme.color.textMuted }}>
-                  {String(i + 1).padStart(2, "0")}
-                </span>
+          <ul>
+            {history.map((h) => (
+              <li key={h.id} data-testid="vf-history-row">
                 <button
                   type="button"
                   onClick={() => {
@@ -745,22 +635,23 @@ export default function App() {
                     border: "none",
                     padding: 0,
                     color: theme.color.primary,
+                    cursor: "pointer",
                     textAlign: "left",
                     fontFamily: "inherit",
                   }}
                 >
                   {h.status} — STT {h.transcription_agent_id}; judge {h.judge_agent_id}
                   {h.score ? ` — ${h.score.value}%` : ""}
-                  {h.summary ? (
-                    <span style={{ display: "block", color: theme.color.textMuted, fontSize: "0.85rem" }}>
-                      {h.summary.slice(0, 140)}
-                      {h.summary.length > 140 ? "…" : ""}
-                    </span>
-                  ) : null}
                 </button>
+                {h.summary ? (
+                  <div style={{ fontSize: "0.85rem", color: theme.color.textMuted }}>
+                    Summary: {h.summary.slice(0, 120)}
+                    {h.summary.length > 120 ? "…" : ""}
+                  </div>
+                ) : null}
               </li>
             ))}
-          </ol>
+          </ul>
         )}
       </section>
 
@@ -773,8 +664,8 @@ export default function App() {
         completedCount={dash.completed_count}
       />
 
-      <section data-testid="vf-scores" style={{ marginTop: theme.space * 2 }}>
-        <h2 style={{ fontFamily: theme.font.display, fontSize: "1.25rem" }}>Scores</h2>
+      <section data-testid="vf-scores">
+        <h2 style={{ fontSize: "1.1rem" }}>Scores</h2>
         <ul>
           {dash.scores.map((s) => (
             <li key={s.run_id ?? s.recording_id} data-testid="vf-score-row">

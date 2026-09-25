@@ -12,7 +12,7 @@ test("US1: score a preloaded recording end-to-end", async ({ page }) => {
   await expect(page.getByTestId("vf-recording-picker").locator("option")).not.toHaveCount(0);
   await page.getByTestId("vf-run").click();
   await expect(page.getByTestId("vf-run-score")).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByTestId("vf-run-score")).toContainText("/ 100");
+  await expect(page.getByTestId("vf-run-score")).toContainText("Score:");
   await expect(page.getByTestId("vf-overall")).not.toContainText("No scores yet");
 });
 

@@ -1,0 +1,32 @@
+schema_version: "1.0"
+
+extension:
+  id: dream
+  name: "Dreaming (session memory curation)"
+  version: "1.0.0"
+  description: >-
+    On-demand consolidation of Cursor agent session transcripts into Spec Kit
+    memory. Writes dreams/<run>/ proposals (kept as audit) and auto-applies
+    learnings-bound candidates to learnings.md; never auto-edits constitution.md.
+  category: "process"
+  effect: "read-write"
+  author: freshusa-apps
+  license: MIT
+
+requires:
+  speckit_version: ">=0.9.0"
+
+provides:
+  commands:
+    - name: speckit.dream.propose
+      file: commands/speckit.dream.propose.md
+      description: "Scan recent agent transcripts, write a dream proposal, and auto-apply learnings-bound candidates"
+    - name: speckit.dream.apply
+      file: commands/speckit.dream.apply.md
+      description: "Optional re-apply or subset override into learnings.md (normal dreams auto-apply from propose)"
+
+tags:
+  - "memory"
+  - "dreaming"
+  - "reflection"
+  - "workflow"
