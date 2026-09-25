@@ -13,7 +13,7 @@ Sync Impact Report
 Agents MUST ask the owner before running commands, making edits, creating
 commits, or deploying. Agents MUST NOT implement application behavior unless
 the owner explicitly says to implement it (or replies **go** after
-Teach-Along for that step). Rationale: owner-driven delivery; protects review
+Action-Report for that step). Rationale: owner-driven delivery; protects review
 and Cursor budget.
 
 ### II. Spec First
@@ -28,14 +28,14 @@ Agents MUST work only in `apps/voiceFaithfulness` unless the owner names
 another app. Agents MUST NOT share secrets, catalogs, or product data with
 sibling apps. Rationale: each app in freshusa-apps is a separate product.
 
-### IV. Teach-Along (NON-NEGOTIABLE)
-Before each non-trivial step (commands, edits, commits, deploys, or
-multi-file design), agents MUST pause and teach in plain language:
-(1) what will change, (2) why this option over named alternatives, (3) how
-the component fits voiceFaithfulness. Agents MUST NOT run tools or write
-files for that step until the owner replies **go**, asks a follow-up, or
-explicitly skips Teach-Along for that step. Rationale: this app is also a
-learning vehicle; Ask First is permission, Teach-Along is understanding.
+### IV. Action-Report (NON-NEGOTIABLE)
+Agents MUST pause before each non-trivial step with an Action-Report:
+bullet list of concrete changes, then an Explanation paragraph (context,
+rejected alternative, fit to this app). Do **not** use What/Why/How. Do
+**not** proceed until the owner replies **go**, asks a follow-up, or
+explicitly skips Action-Report for that step. Ask First is permission;
+Action-Report is understanding.
+
 
 ### V. Faithfulness Pipeline (NON-NEGOTIABLE)
 Every scored recording MUST follow this ordered pipeline and no other:
