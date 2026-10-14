@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>metricsDashboard · AI companion (slides)</title>
+    <style>
+      :root {
+        --ink: #1a1f1c;
+        --muted: #5c6b63;
+        --line: #c5d0c8;
+        --accent: #2f6b4f;
+        --bg: #e8f0ea;
+        --panel: #f7faf8;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "DM Sans", "Segoe UI", system-ui, sans-serif;
+        color: var(--ink);
+        background: linear-gradient(165deg, #dfece3, var(--bg));
+      }
+      .deck {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 1.25rem 1.25rem 2.5rem;
+      }
+      .chrome {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+      }
+      .pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+      .pill,
+      .nav button {
+        font: inherit;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--ink);
+        padding: 0.35rem 0.65rem;
+        cursor: pointer;
+      }
+      .pill.active,
+      .nav button.primary {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+      .nav {
+        display: flex;
+        gap: 0.5rem;
+      }
+      .slide {
+        display: none;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        padding: 1.25rem;
+        min-height: 70vh;
+      }
+      .slide.active {
+        display: block;
+      }
+      .slide h1 {
+        margin: 0 0 0.35rem;
+        font-size: clamp(1.6rem, 3vw, 2.2rem);
+        color: var(--accent);
+        font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+      }
+      .slide .lede {
+        margin: 0 0 1rem;
+        color: var(--muted);
+        max-width: 48rem;
+      }
+      .slide img {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: 62vh;
+        object-fit: contain;
+        border: 1px solid var(--line);
+        background: #fff;
+      }
+      .caption {
+        margin-top: 0.75rem;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      .meta {
+        margin-top: 1rem;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      kbd {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.85em;
+        border: 1px solid var(--line);
+        padding: 0.05rem 0.3rem;
+        background: #fff;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          scroll-behavior: auto !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="deck">
+      <div class="chrome">
+        <div class="pills" id="pills" aria-label="Slides"></div>
+        <div class="nav">
+          <button type="button" id="prev" aria-label="Previous slide">Prev</button>
+          <button type="button" class="primary" id="next" aria-label="Next slide">
+            Next
+          </button>
+        </div>
+      </div>
+
+      <section class="slide active" data-title="Title">
+        <h1>Local AI companion</h1>
+        <p class="lede">
+          metricsDashboard Spec Kit <strong>003</strong> — Option C, local only.
+          Fixture-grounded FastAPI agent + promptfoo + Companion drawer. Pages SPA
+          unchanged without <code>VITE_COMPANION_API</code>.
+        </p>
+        <img src="01-ops-console.png" alt="Metrics ops console with Companion control" />
+        <p class="caption">
+          Ops console with Companion enabled locally. Screenshots live in this folder
+          under voiceFaithfulness.
+        </p>
+      </section>
+
+      <section class="slide" data-title="Ops console">
+        <h1>Ops console baseline</h1>
+        <p class="lede">
+          Existing board: fixtures → insights, KPIs, compare bars. Companion is an
+          optional local plane beside this SPA.
+        </p>
+        <img src="01-ops-console.png" alt="Full ops console screenshot" />
+        <p class="caption">Theme Forest · Companion toggle visible when API URL is set.</p>
+      </section>
+
+      <section class="slide" data-title="Drawer">
+        <h1>Companion drawer (Canvas lock A)</h1>
+        <p class="lede">
+          Right drawer: messages, input, citation chips. Progressive disclosure —
+          hidden on Pages when env unset.
+        </p>
+        <img src="02-companion-drawer.png" alt="Companion drawer open ready for questions" />
+        <p class="caption">Copy: “Sample fixtures only — not live sibling reads”.</p>
+      </section>
+
+      <section class="slide" data-title="Fixture answer">
+        <h1>Fixture-grounded answer</h1>
+        <p class="lede">
+          Ask about Sourced Value coverage → <code>grounding: fixture</code>,
+          coveragePercent 62.4%, citation chips to fixture paths.
+        </p>
+        <img
+          src="03-fixture-answer.png"
+          alt="Companion answering sourced-value coverage from fixtures"
+        />
+        <p class="caption">Never invents numbers — only labeled fixtures + README.</p>
+      </section>
+
+      <section class="slide" data-title="Refusal">
+        <h1>Refusal guardrail</h1>
+        <p class="lede">
+          “Make up a live production coverage percent…” →
+          <code>grounding: refused</code>. No fabricated live %.
+        </p>
+        <img src="04-refusal.png" alt="Companion refusing to invent live coverage" />
+        <p class="caption">Covered by promptfoo / eval_http golden + refusal cases.</p>
+      </section>
+
+      <section class="slide" data-title="Architecture">
+        <h1>Architecture (Archify)</h1>
+        <p class="lede">
+          SPA + local FastAPI companion + promptfoo + Compose. Cloudflare Pages hosts
+          the SPA only.
+        </p>
+        <img
+          src="05-architecture.png"
+          alt="Archify map of metrics dashboard with AI companion"
+        />
+        <p class="caption">
+          Source: apps/metricsDashboard/docs/archify/metrics-dashboard.architecture.html
+        </p>
+      </section>
+
+      <section class="slide" data-title="How it works">
+        <h1>How it works</h1>
+        <p class="lede">Request path for a local companion turn.</p>
+        <ol class="lede">
+          <li>SPA with <code>VITE_COMPANION_API=http://127.0.0.1:8088</code></li>
+          <li>Drawer <code>POST /v1/chat</code></li>
+          <li>Guardrail refuses live/invent asks → <code>refused</code></li>
+          <li>Else list apps → RAG → metric snapshot → citations → <code>fixture</code></li>
+          <li>UI shows answer + citation chips</li>
+        </ol>
+        <img src="03-fixture-answer.png" alt="Fixture answer as example of successful turn" />
+      </section>
+
+      <section class="slide" data-title="Try it">
+        <h1>Try it</h1>
+        <p class="lede">
+          Terminal A: <code>cd apps/metricsDashboard && npm run ai:serve</code><br />
+          Terminal B:
+          <code>VITE_COMPANION_API=http://127.0.0.1:8088 npm run dev</code><br />
+          Recapture slides:
+          <code>node scripts/capture-companion-presentation.mjs</code>
+        </p>
+        <img src="02-companion-drawer.png" alt="Companion drawer for local try-it" />
+        <p class="meta">
+          Spec: apps/metricsDashboard/specs/003-ai-companion · Loop:
+          apps/metricsDashboard/docs/ai-engineer-loop.md · Keys:
+          <kbd>←</kbd> <kbd>→</kbd> · <kbd>Space</kbd>
+        </p>
+      </section>
+    </div>
+
+    <script>
+      const slides = [...document.querySelectorAll(".slide")];
+      const pills = document.getElementById("pills");
+      let i = 0;
+
+      slides.forEach((s, idx) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "pill" + (idx === 0 ? " active" : "");
+        b.textContent = `${idx + 1} · ${s.dataset.title}`;
+        b.addEventListener("click", () => show(idx));
+        pills.appendChild(b);
+      });
+
+      function show(n) {
+        i = (n + slides.length) % slides.length;
+        slides.forEach((s, idx) => s.classList.toggle("active", idx === i));
+        [...pills.children].forEach((p, idx) =>
+          p.classList.toggle("active", idx === i),
+        );
+      }
+
+      document.getElementById("prev").addEventListener("click", () => show(i - 1));
+      document.getElementById("next").addEventListener("click", () => show(i + 1));
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight" || e.key === " ") {
+          e.preventDefault();
+          show(i + 1);
+        }
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          show(i - 1);
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -11,9 +11,12 @@ This command **reads** transcripts and existing Spec Kit memory. It **writes**:
 
 1. `.specify/memory/dreams/<run>/sources.md` and `proposal.md` (always kept as the audit trail)
 2. Auto-appends all eligible `learnings`-bound candidates into `.specify/memory/learnings.md`
-3. `dreams/<run>/apply.md` recording what was auto-applied
+3. Auto-promotes **portable** process learnings into the workspace shared kit
+   `agent-kit/LEARNINGS.md` (see **Shared agent-kit promotion** below)
+4. `dreams/<run>/apply.md` recording what was auto-applied (app + kit)
 
 It MUST NOT edit `constitution.md`, application source, or catalog/product data.
+It MUST NOT copy product-specific facts into `agent-kit/`.
 
 Downstream: `__SPECKIT_COMMAND_DREAM_APPLY__` is only for rare re-apply /
 manual subset overrides — normal dreams auto-apply in this command.
@@ -106,8 +109,37 @@ Unless `dry_run=true`, after writing `proposal.md`:
 3. Ensure `.specify/memory/learnings.md` exists (create with the standard header
    if missing).
 4. Append a dated section for this run with one bullet per auto-accepted item.
-5. Write `DREAM_DIR/apply.md` with `Mode: auto-approved`.
-6. Set proposal status to **auto-applied**.
+5. Run **Shared agent-kit promotion** for portable subset.
+6. Write `DREAM_DIR/apply.md` with `Mode: auto-approved` (include kit paths).
+7. Set proposal status to **auto-applied**.
+
+## Shared agent-kit promotion
+
+Resolve kit root (first match):
+
+1. `$AGENT_KIT` if it contains `PROMPT.md`
+2. Git toplevel `agent-kit/` if that directory contains `PROMPT.md`
+3. `$PAYDAY_AGENT_KIT` if it contains `PROMPT.md`
+
+If none exist, note **kit skipped (missing)** in `apply.md` and continue (do not fail the dream).
+
+For each auto-accepted candidate that is `kind: preference|process|mistake`
+(or process-shaped `project-fact` that generalizes):
+
+1. Rewrite `summary` to remove app/brand names, private paths, secrets, URLs,
+   catalogs, and one-off task status. If rewrite is impossible, skip.
+2. Deduplicate against existing `agent-kit/LEARNINGS.md`.
+3. Append under:
+
+   ```markdown
+   ## Dream promote — <ISO date> — <run>
+
+   - <portable summary> _(kind, confidence)_
+   ```
+
+4. Follow `agent-kit/skills/qa-dream-promote/SKILL.md` when present.
+5. **Never** auto-edit `agent-kit/PROMPT.md` hard rules. List any suggested
+   PROMPT deltas under **Proposed PROMPT deltas** in `apply.md` for owner review.
 
 ## Execution
 
@@ -118,10 +150,11 @@ Unless `dry_run=true`, after writing `proposal.md`:
 4. Draft candidates; dedupe against current memory files.
 5. Write `DREAM_DIR/sources.md` — files considered, skipped, and why.
 6. Write `DREAM_DIR/proposal.md` using the template below.
-7. Unless `dry_run=true`, auto-apply per **Auto-apply rules** and write
-   `apply.md`.
-8. Tell the owner the dream folder path and that learnings were auto-updated
-   (or that dry_run skipped apply).
+7. Unless `dry_run=true`, auto-apply per **Auto-apply rules** (app learnings +
+   kit promotion) and write `apply.md`.
+8. Tell the owner the dream folder path, that app learnings were updated, and
+   whether portable bullets were promoted to `agent-kit/LEARNINGS.md`
+   (or that dry_run / missing kit skipped apply).
 
 ## proposal.md template
 
@@ -161,7 +194,9 @@ Unless `dry_run=true`, after writing `proposal.md`:
 
 Learnings-bound medium+ candidates are **auto-applied** to
 `.specify/memory/learnings.md` unless this run is `dry_run` or fail-closed.
-See `apply.md`. Constitution-bound items are never auto-written.
+Portable process bullets are also promoted to `agent-kit/LEARNINGS.md` when
+the kit is present. See `apply.md`. Constitution-bound items and PROMPT hard
+rules are never auto-written.
 ```
 
 ## sources.md template

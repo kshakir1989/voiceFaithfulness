@@ -2,6 +2,9 @@ frontend/test-results/
 frontend/playwright-report/
 frontend/coverage/
 frontend/.bdd/
+frontend/*.tsbuildinfo
+*.tsbuildinfo
+.DS_Store
 data/*.db
 data/**/*.db
 backend/.venv/

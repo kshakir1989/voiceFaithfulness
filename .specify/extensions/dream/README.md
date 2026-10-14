@@ -24,7 +24,11 @@ exist (create empty learnings header if missing).
 
 - `/speckit.dream.propose` — write `dreams/<run>/` audit docs **and** auto-apply
   medium+ learnings-bound candidates to `learnings.md`
-- `/speckit.dream.apply` — optional override / re-apply / post-`dry_run`
-- **Never** auto-edit `constitution.md`
+- Also promote **portable** process learnings to workspace
+  `agent-kit/LEARNINGS.md` (company-agnostic; no product facts). See
+  `agent-kit/README.md` and `agent-kit/skills/qa-dream-promote`.
+- `/speckit.dream.apply` — optional override / re-apply / post-`dry_run` (same
+  kit promotion rules)
+- **Never** auto-edit `constitution.md` or `agent-kit/PROMPT.md` hard rules
 
 See command markdown under `commands/` for full rules.

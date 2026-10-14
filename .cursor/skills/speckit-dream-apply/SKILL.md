@@ -1,0 +1,1 @@
+../../../.specify/extensions/dream/.specify-dev/agent-commands/cursor-agent/speckit-dream-apply/SKILL.md

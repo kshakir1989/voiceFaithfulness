@@ -75,9 +75,12 @@ Prerequisites:
 
 5. Append or write `DREAM_DIR/apply.md` recording mode (`manual-override` or
    `re-apply`), what was accepted/skipped, and the learnings path touched.
-6. Update proposal status line to **auto-applied** or **manually applied** as
+6. Promote portable process bullets to workspace `agent-kit/LEARNINGS.md` using
+   the same **Shared agent-kit promotion** rules as
+   `__SPECKIT_COMMAND_DREAM_PROPOSE__` / `agent-kit/skills/qa-dream-promote`.
+7. Update proposal status line to **auto-applied** or **manually applied** as
    appropriate.
-7. Do **not** commit unless the owner asked to commit.
+8. Do **not** commit unless the owner asked to commit.
 
 ## apply.md template
 
@@ -90,4 +93,6 @@ Prerequisites:
 - Skipped (constitution): <list>
 - Skipped (other): <list>
 - Updated: .specify/memory/learnings.md
+- Kit: agent-kit/LEARNINGS.md <promoted N | skipped missing | skipped none portable>
+- Proposed PROMPT deltas: <none | bullets for owner>
 ```
